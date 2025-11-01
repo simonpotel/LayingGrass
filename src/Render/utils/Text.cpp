@@ -7,7 +7,7 @@ void draw(sf::RenderWindow& window, const std::string& text, float x, float y, u
     static bool loaded = false;
 
     // charge la police une seule fois
-    if (!loaded && font.loadFromFile("../resources/BoldPixels.ttf")) {
+    if (!loaded && (font.loadFromFile("BoldPixels.ttf") || font.loadFromFile("../resources/BoldPixels.ttf"))) {
         loaded = true;
     }
 
@@ -36,6 +36,25 @@ void drawBox(sf::RenderWindow& window, float x, float y, float width, float heig
     box.setOutlineColor(outlineColor);
     box.setOutlineThickness(2);
     window.draw(box);
+}
+
+sf::Text createText(const std::string& text, unsigned int size) {
+    static sf::Font font;
+    static bool loaded = false;
+    
+    if (!loaded) {
+        loaded = font.loadFromFile("BoldPixels.ttf") || font.loadFromFile("../resources/BoldPixels.ttf");
+    }
+    
+    sf::Text sfText;
+    if (loaded) {
+        sfText.setFont(font);
+    }
+    sfText.setString(text);
+    sfText.setCharacterSize(size);
+    sfText.setFillColor(sf::Color::White);
+    
+    return sfText;
 }
 
 }

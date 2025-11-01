@@ -62,6 +62,12 @@ function(copy_resources target)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             ${CMAKE_SOURCE_DIR}/resources/BoldPixels.ttf
             $<TARGET_FILE_DIR:${target}>/BoldPixels.ttf
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/resources/button.png
+            $<TARGET_FILE_DIR:${target}>/button.png
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/resources/menu.png
+            $<TARGET_FILE_DIR:${target}>/menu.png
     )
 endfunction()
 

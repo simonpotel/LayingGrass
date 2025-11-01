@@ -30,6 +30,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(SFML)
 
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG v1.14.0
+)
+FetchContent_MakeAvailable(googletest)
+
 include_directories(includes)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
@@ -38,5 +45,20 @@ add_executable(LayingGrassClient client.cpp ${SOURCES})
 target_link_libraries(LayingGrassClient sfml-graphics sfml-window sfml-system)
 
 add_executable(LayingGrassServer server.cpp ${SOURCES})
-target_link_libraries(LayingGrassServer sfml-system)
+target_link_libraries(LayingGrassServer sfml-window sfml-system)
+
+enable_testing()
+file(GLOB_RECURSE TEST_SOURCES "tests/*.cpp")
+if(TEST_SOURCES)
+    add_executable(LayingGrassTests ${TEST_SOURCES} ${SOURCES})
+    target_link_libraries(LayingGrassTests 
+        GTest::gtest 
+        GTest::gtest_main 
+        sfml-window
+        sfml-system
+    )
+    include(GoogleTest)
+    gtest_discover_tests(LayingGrassTests)
+endif()
+
 

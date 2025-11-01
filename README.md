@@ -49,3 +49,25 @@ build\Release\LayingGrassServer.exe
 build\Release\LayingGrassClient.exe
 ```
 
+## Tests
+
+After building, run tests with:
+
+```bash
+cd build
+ctest
+```
+
+Or run tests directly:
+```bash
+./build/LayingGrassTests
+```
+
+On Windows:
+```bash
+cd build
+ctest -C Release
+# or
+build\Release\LayingGrassTests.exe
+```
+

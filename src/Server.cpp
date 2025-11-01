@@ -1,15 +1,32 @@
 #include "Server.hpp"
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
 #include <thread>
+#include <cstdint>
 
-// constructeur pour le serveur
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    #pragma comment(lib, "ws2_32.lib")
+    #define close(s) closesocket(s)
+    #define socklen_t int
+#else
+    #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <unistd.h>
+#endif
+
 Server::Server(int port) : port(port), running(false) {
-    serverSocket = socket(AF_INET, SOCK_STREAM, 0); // crée un socket pour le serveur
+#ifdef _WIN32
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2, 2), &wsaData);
+#endif
+    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     
     int opt = 1; // option pour le socket qui permet de réutiliser l'adresse
-    setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)); // permet de réutiliser l'adresse du socket
+#ifdef _WIN32
+    setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));
+#else
+    setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+#endif
     
     sockaddr_in address; // structure pour l'adresse du serveur
     address.sin_family = AF_INET; // famille d'adresse (IPv4)
@@ -23,6 +40,9 @@ Server::Server(int port) : port(port), running(false) {
 Server::~Server() {
     stop(); // arrête le serveur
     close(serverSocket); // ferme le socket
+#ifdef _WIN32 
+    WSACleanup(); // libère les ressources WSADATA
+#endif
 }
 
 void Server::registerCallback(PacketType type, std::function<void(Player*, const void*, size_t)> callback) {
@@ -92,22 +112,22 @@ void Server::handleClient(int clientSocket) {
 bool Server::receivePacket(int socket, PacketHeader& header, void*& data) {
     int typeNetwork, sizeNetwork;
     
-    if (recv(socket, &typeNetwork, sizeof(int), 0) <= 0) {
-        return false; // si le paquet n'est pas reçu, on continue la boucle
+    if (recv(socket, (char*)&typeNetwork, sizeof(int), 0) <= 0) {
+        return false;
     }
     
-    if (recv(socket, &sizeNetwork, sizeof(int), 0) <= 0) {
-        return false; // si la taille du paquet n'est pas reçue, on continue la boucle
+    if (recv(socket, (char*)&sizeNetwork, sizeof(int), 0) <= 0) {
+        return false;
     }
     
-    header.type = static_cast<PacketType>(ntohl(static_cast<uint32_t>(typeNetwork))); // on convertit le type du paquet en format binaire
-    header.size = ntohl(static_cast<uint32_t>(sizeNetwork)); // on convertit la taille du paquet en format binaire
+    header.type = static_cast<PacketType>(ntohl(static_cast<uint32_t>(typeNetwork)));
+    header.size = ntohl(static_cast<uint32_t>(sizeNetwork));
     
     if (header.size > 0) { 
         data = new char[header.size];
-        recv(socket, data, header.size, 0); // on reçoit le paquet
+        recv(socket, (char*)data, header.size, 0);
     }
     
-    return true; // succès de la réception du paquet
+    return true;
 }
 

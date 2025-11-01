@@ -10,7 +10,7 @@ Laying Grass is a tile-placement game where players place grass tiles on a grid 
 ### Linux
 ```bash
 sudo apt-get update
-sudo apt-get install -y libx11-dev libxrandr-dev libgl1-mesa-dev libopenal-dev libflac-dev libvorbis-dev
+sudo apt-get install -y libpthread-stubs0-dev libgl1-mesa-dev libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev libfreetype6-dev libglew-dev libjpeg-dev libsndfile1-dev libopenal-dev libflac-dev libvorbis-dev
 ```
 
 ### macOS

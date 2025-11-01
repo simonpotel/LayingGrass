@@ -1,17 +1,10 @@
-#include <SFML/Window.hpp>
+#include "Client.hpp"
 
 int main() {
-    sf::Window window(sf::VideoMode(800, 600), "LayingGrass Client");
-    
-    while (window.isOpen()) {
-        sf::Event event;
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed) {
-                window.close();
-            }
-        }
+    auto window = createWindow();
+    if (window && window->isOpen()) {
+        run(*window);
     }
-    
     return 0;
 }
 

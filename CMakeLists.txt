@@ -64,6 +64,9 @@ endfunction()
 add_executable(LayingGrassClient client.cpp ${SOURCES})
 target_link_libraries(LayingGrassClient PRIVATE sfml-graphics sfml-window sfml-system)
 copy_sfml_dlls(LayingGrassClient)
+if(UNIX)
+    target_link_libraries(LayingGrassClient PRIVATE pthread)
+endif()
 
 if(APPLE)
     set_target_properties(LayingGrassClient PROPERTIES
@@ -74,6 +77,9 @@ endif()
 add_executable(LayingGrassServer server.cpp ${SOURCES})
 target_link_libraries(LayingGrassServer PRIVATE sfml-window sfml-system)
 copy_sfml_dlls(LayingGrassServer)
+if(UNIX)
+    target_link_libraries(LayingGrassServer PRIVATE pthread)
+endif()
 
 if(APPLE)
     set_target_properties(LayingGrassServer PROPERTIES

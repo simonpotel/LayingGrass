@@ -1,0 +1,133 @@
+#include "Server.hpp"
+#include <thread>
+#include <cstdint>
+
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    #pragma comment(lib, "ws2_32.lib")
+    #define close(s) closesocket(s)
+    #define socklen_t int
+#else
+    #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <unistd.h>
+#endif
+
+Server::Server(int port) : port(port), running(false) {
+#ifdef _WIN32
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2, 2), &wsaData);
+#endif
+    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    
+    int opt = 1; // option pour le socket qui permet de réutiliser l'adresse
+#ifdef _WIN32
+    setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));
+#else
+    setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+#endif
+    
+    sockaddr_in address; // structure pour l'adresse du serveur
+    address.sin_family = AF_INET; // famille d'adresse (IPv4)
+    address.sin_addr.s_addr = INADDR_ANY; // adresse IP du serveur
+    address.sin_port = htons(port); // port du serveur
+    
+    bind(serverSocket, (sockaddr*)&address, sizeof(address)); // lie le socket à l'adresse
+    listen(serverSocket, 30); // écoute les connexions des clients (30 max)
+}
+
+Server::~Server() {
+    stop(); // arrête le serveur
+    close(serverSocket); // ferme le socket
+#ifdef _WIN32 
+    WSACleanup(); // libère les ressources WSADATA
+#endif
+}
+
+void Server::registerCallback(PacketType type, std::function<void(Player*, const void*, size_t)> callback) {
+    callbacks[type] = callback; // enregistre le callback pour le type de paquet dans la map des callbacks
+}
+
+void Server::start() {
+    running = true; // le serveur est en cours d'exécution
+    std::thread acceptThread(&Server::acceptConnections, this); // crée un thread pour accepter les connexions des clients
+    acceptThread.detach(); // détache le thread pour que le serveur puisse continuer à fonctionner
+}
+
+void Server::stop() {
+    running = false; // le serveur n'est plus en cours d'exécution
+}
+
+void Server::acceptConnections() {
+    while (running) {
+        sockaddr_in clientAddress; // structure pour l'adresse du client
+        socklen_t clientLen = sizeof(clientAddress); // taille de l'adresse du client
+        int clientSocket = accept(serverSocket, (sockaddr*)&clientAddress, &clientLen); // accepte la connexion du client
+        
+        if (clientSocket < 0) {
+            continue; // si la connexion échoue, on continue la boucle
+        }
+        
+        auto player = std::make_unique<Player>("", 0, clientSocket); // crée un joueur pour le client
+        players.push_back(std::move(player)); // ajoute le joueur à la liste des joueurs
+        
+        std::thread clientThread(&Server::handleClient, this, clientSocket); // crée un thread pour gérer le client
+        clientThread.detach(); // détache le thread pour que le serveur puisse continuer à fonctionner
+    }
+}
+
+void Server::handleClient(int clientSocket) {
+    Player* player = nullptr; // pointeur vers le joueur
+    for (auto& p : players) {
+        if (p->connection == clientSocket) {
+            player = p.get(); // on récupère le joueur
+            break;
+        }
+    }
+    
+    if (!player) return; // si le joueur n'est pas trouvé, on continue la boucle
+    
+    while (running) {
+        PacketHeader header; // structure pour le paquet de header
+        void* data = nullptr;
+        
+        if (!receivePacket(clientSocket, header, data)) {
+            break; // si le paquet n'est pas reçu, on continue la boucle
+        }
+        
+        auto it = callbacks.find(header.type); // on cherche le callback pour le type de paquet
+        if (it != callbacks.end()) {
+            it->second(player, data, header.size); // on appelle le callback pour le type de paquet
+        }
+        
+        if (data) {
+            delete[] (char*)data; // on libère la mémoire allouée pour le paquet
+        }
+    }
+    
+    close(clientSocket); // ferme le socket du client
+}
+
+bool Server::receivePacket(int socket, PacketHeader& header, void*& data) {
+    int typeNetwork, sizeNetwork;
+    
+    if (recv(socket, (char*)&typeNetwork, sizeof(int), 0) <= 0) {
+        return false;
+    }
+    
+    if (recv(socket, (char*)&sizeNetwork, sizeof(int), 0) <= 0) {
+        return false;
+    }
+    
+    header.type = static_cast<PacketType>(ntohl(static_cast<uint32_t>(typeNetwork)));
+    header.size = ntohl(static_cast<uint32_t>(sizeNetwork));
+    
+    if (header.size > 0) { 
+        data = new char[header.size];
+        recv(socket, (char*)data, header.size, 0);
+    }
+    
+    return true;
+}
+

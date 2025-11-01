@@ -40,7 +40,9 @@ file(GLOB_RECURSE SOURCES "src/*.cpp")
 
 # sépare les sources qui nécessitent sfml-graphics (pour le client uniquement)
 list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/Render.cpp")
-set(CLIENT_SOURCES ${SOURCES} "${CMAKE_SOURCE_DIR}/src/Render.cpp")
+file(GLOB_RECURSE RENDER_SOURCES "src/Render/*.cpp")
+list(REMOVE_ITEM SOURCES ${RENDER_SOURCES})
+set(CLIENT_SOURCES ${SOURCES} "${CMAKE_SOURCE_DIR}/src/Render.cpp" ${RENDER_SOURCES})
 
 function(copy_sfml_dlls target)
     if(WIN32)

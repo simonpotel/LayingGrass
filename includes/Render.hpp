@@ -1,15 +1,21 @@
 #ifndef RENDER_HPP
 #define RENDER_HPP
 
-#include <SFML/Window.hpp>
+#include <SFML/Graphics.hpp>
 #include <memory>
+#include "GameState.hpp"
 
-// classe pour la gestion de la fenêtre de rendu avec SFML pour le client 
 class Render {
 public:
-    static std::unique_ptr<sf::Window> createWindow(); // crée une fenêtre de rendu avec SFML
-    static void run(sf::Window& window); // exécute la boucle de rendu avec SFML
+    virtual ~Render() = default;
+    
+    virtual void draw(sf::RenderWindow& window, GameState& gameState) = 0;
+    virtual bool handleInput(sf::RenderWindow& window, GameState& gameState, sf::Event& event) = 0;
+    
+    static std::unique_ptr<sf::RenderWindow> createWindow();
+    static std::unique_ptr<Render> createScreen(ClientState state);
+    static void render(sf::RenderWindow& window, GameState& gameState);
+    static bool handleInput(sf::RenderWindow& window, GameState& gameState);
 };
 
 #endif
-

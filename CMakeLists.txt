@@ -38,6 +38,12 @@ include_directories(includes)
 
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 
+# sépare les sources qui nécessitent sfml-graphics (pour le client uniquement)
+list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/Render.cpp")
+file(GLOB_RECURSE RENDER_SOURCES "src/Render/*.cpp")
+list(REMOVE_ITEM SOURCES ${RENDER_SOURCES})
+set(CLIENT_SOURCES ${SOURCES} "${CMAKE_SOURCE_DIR}/src/Render.cpp" ${RENDER_SOURCES})
+
 function(copy_sfml_dlls target)
     if(WIN32)
         add_custom_command(TARGET ${target} POST_BUILD
@@ -48,6 +54,21 @@ function(copy_sfml_dlls target)
                 $<TARGET_FILE_DIR:${target}>
         )
     endif()
+endfunction()
+
+# function to copy resources (fonts, etc.) to the build directory
+function(copy_resources target)
+    add_custom_command(TARGET ${target} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/resources/BoldPixels.ttf
+            $<TARGET_FILE_DIR:${target}>/BoldPixels.ttf
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/resources/button.png
+            $<TARGET_FILE_DIR:${target}>/button.png
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_SOURCE_DIR}/resources/menu.png
+            $<TARGET_FILE_DIR:${target}>/menu.png
+    )
 endfunction()
 
 function(copy_gtest_dlls target)
@@ -61,11 +82,19 @@ function(copy_gtest_dlls target)
     endif()
 endfunction()
 
-add_executable(LayingGrassClient client.cpp ${SOURCES})
+add_executable(LayingGrassClient client.cpp ${CLIENT_SOURCES})
 target_link_libraries(LayingGrassClient PRIVATE sfml-graphics sfml-window sfml-system)
 copy_sfml_dlls(LayingGrassClient)
+copy_resources(LayingGrassClient)
+if(APPLE)
+    # sur macos, link explicitement avec le framework foundation pour std::filesystem
+    target_link_libraries(LayingGrassClient PRIVATE "-framework Foundation")
+endif()
 if(UNIX)
     target_link_libraries(LayingGrassClient PRIVATE pthread)
+endif()
+if(WIN32)
+    target_link_libraries(LayingGrassClient PRIVATE ws2_32)
 endif()
 
 if(APPLE)
@@ -80,6 +109,9 @@ copy_sfml_dlls(LayingGrassServer)
 if(UNIX)
     target_link_libraries(LayingGrassServer PRIVATE pthread)
 endif()
+if(WIN32)
+    target_link_libraries(LayingGrassServer PRIVATE ws2_32)
+endif()
 
 if(APPLE)
     set_target_properties(LayingGrassServer PROPERTIES
@@ -91,10 +123,11 @@ enable_testing()
 file(GLOB_RECURSE TEST_SOURCES "tests/*.cpp")
 
 if(TEST_SOURCES)
-    add_executable(LayingGrassTests ${TEST_SOURCES} ${SOURCES})
+    add_executable(LayingGrassTests ${TEST_SOURCES} ${CLIENT_SOURCES})
     target_link_libraries(LayingGrassTests PRIVATE
-        GTest::gtest 
-        GTest::gtest_main 
+        GTest::gtest
+        GTest::gtest_main
+        sfml-graphics
         sfml-window
         sfml-system
     )

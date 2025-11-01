@@ -1,6 +1,7 @@
 #include "Client.hpp"
 #include "Packet.hpp"
 #include <cstring>
+#include <thread>
 
 #ifdef _WIN32
     #include <winsock2.h>
@@ -15,7 +16,7 @@
     #include <unistd.h>
 #endif
 
-Client::Client() : socketFd(-1), connected(false) {
+Client::Client() : socketFd(-1), connected(false), receiving(false) {
 #ifdef _WIN32
     WSADATA wsaData;
     WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -23,6 +24,7 @@ Client::Client() : socketFd(-1), connected(false) {
 }
 
 Client::~Client() {
+    stopReceiving(); // arrête le thread de réception
     disconnect();
 #ifdef _WIN32
     WSACleanup();
@@ -46,16 +48,53 @@ bool Client::connect(const char* serverIp, int port) {
 }
 
 void Client::disconnect() {
+    stopReceiving(); // arrête le thread de réception
     close(socketFd); // ferme le socket
     socketFd = -1; // réinitialise le descripteur de socket à -1
     connected = false; // le client n'est plus connecté au serveur
 }
 
-bool Client::sendConnectRequest(const char* playerName) {
+bool Client::sendConnectRequest(const char* playerName, int lobbyId) {
     ConnectRequestPacket packet; // structure pour la demande de connexion
     memset(&packet, 0, sizeof(packet)); // initialise la structure à 0
     strncpy(packet.playerName, playerName, sizeof(packet.playerName) - 1); // copie le nom du joueur dans la structure
-    
+    packet.lobbyId = lobbyId; // définit l'identifiant du lobby
+
     return Packet::sendPacket(socketFd, PacketType::CONNECT_REQUEST, &packet, sizeof(ConnectRequestPacket)); // envoie la demande de connexion au serveur
+}
+
+void Client::startReceiving() {
+    if (receiving || !connected) {
+        return; // déjà en cours de réception ou non connecté
+    }
+    receiving = true; // active la réception
+    std::thread receiveThread(&Client::receiveLoop, this); // crée un thread pour la réception des paquets
+    receiveThread.detach(); // détache le thread pour que le client puisse continuer à fonctionner
+}
+
+void Client::stopReceiving() {
+    receiving = false; // arrête la réception
+}
+
+void Client::receiveLoop() {
+    while (receiving && connected) {
+        PacketHeader header; // structure pour le paquet de header
+        void* data = nullptr;
+
+        if (!Packet::receivePacket(socketFd, header, data)) {
+            break; // si le paquet n'est pas reçu, on arrête la boucle
+        }
+
+        // appelle le callback correspondant au type de paquet via le callback manager
+        auto* callback = callbackManager.getCallback(header.type);
+        if (callback) {
+            (*callback)(data, header.size);
+        }
+
+        if (data) {
+            delete[] (char*)data; // on libère la mémoire allouée pour le paquet
+        }
+    }
+    receiving = false; // indique que la réception est terminée
 }
 

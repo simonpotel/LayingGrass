@@ -1,14 +1,88 @@
 #include "Client.hpp"
 #include "Render.hpp"
+#include "Packet.hpp"
+#include "GameState.hpp"
+#include <iostream>
+
+// variables globales pour accéder au client et gamestate dans les callbacks
+Client* g_client = nullptr;
+GameState* g_gameState = nullptr;
+
+void handleLobbyList(const void* data, size_t size) {
+    const LobbyListPacket* packet = (const LobbyListPacket*)data;
+
+    // met à jour la liste des lobbies dans le gamestate
+    if (g_gameState) {
+        g_gameState->updateLobbies(*packet);
+    }
+}
+
+void handleConnectResponse(const void* data, size_t size) {
+    const ConnectResponsePacket* packet = (const ConnectResponsePacket*)data;
+
+    if (packet->accepted) {
+        std::cout << "Connection accepted to lobby " << packet->lobbyId << std::endl;
+        // met à jour l'état du jeu
+        if (g_gameState) {
+            g_gameState->setCurrentLobby(packet->lobbyId);
+            g_gameState->setState(ClientState::IN_LOBBY);
+        }
+    } else {
+        std::cout << "Connection refused: " << packet->reason << std::endl;
+        // retour à la sélection du lobby
+        if (g_gameState) {
+            g_gameState->setState(ClientState::SELECTING_LOBBY);
+            g_gameState->setRequestSent(false); // réinitialise le flag pour permettre une nouvelle tentative
+        }
+    }
+}
 
 int main() {
     Client client;
-    client.connect("127.0.0.1", 5555);
-    client.sendConnectRequest("test");
-    
-    auto window = Render::createWindow();
-    if (window && window->isOpen()) {
-        Render::run(*window);
+    GameState gameState;
+
+    g_client = &client;
+    g_gameState = &gameState;
+
+    // connexion au serveur
+    if (!client.connect("127.0.0.1", 5555)) {
+        std::cerr << "Error: Cannot connect to server" << std::endl;
+        return 1;
     }
+
+    std::cout << "Connected to server" << std::endl;
+
+    // enregistrement des callbacks
+    client.getCallbackManager().registerCallback(PacketType::LOBBY_LIST, handleLobbyList);
+    client.getCallbackManager().registerCallback(PacketType::CONNECT_RESPONSE, handleConnectResponse);
+
+    // démarre la réception des paquets
+    client.startReceiving();
+
+    // crée la fenêtre de rendu
+    auto window = Render::createWindow();
+    if (!window || !window->isOpen()) {
+        std::cerr << "Error: Cannot create window" << std::endl;
+        return 1;
+    }
+
+    // boucle principale du jeu
+    while (window->isOpen()) {
+        // gère les inputs utilisateur
+        if (Render::handleInput(*window, gameState)) {
+            break; // demande de quitter
+        }
+
+        // si l'utilisateur a validé son nom, envoie la demande de connexion une seule fois
+        if (gameState.getState() == ClientState::WAITING_FOR_RESPONSE && !gameState.isRequestSent()) {
+            client.sendConnectRequest(gameState.getUsername().c_str(), gameState.getSelectedLobby());
+            gameState.setRequestSent(true); // marque la requête comme envoyée
+        }
+
+        // rendu
+        Render::render(*window, gameState);
+    }
+
+    return 0;
 }
 

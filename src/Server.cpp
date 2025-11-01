@@ -1,12 +1,24 @@
 #include "Server.hpp"
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
 #include <thread>
 
-// constructeur pour le serveur
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    #pragma comment(lib, "ws2_32.lib")
+    #define close(s) closesocket(s)
+    #define socklen_t int
+#else
+    #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <unistd.h>
+#endif
+
 Server::Server(int port) : port(port), running(false) {
-    serverSocket = socket(AF_INET, SOCK_STREAM, 0); // crée un socket pour le serveur
+#ifdef _WIN32
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2, 2), &wsaData);
+#endif
+    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
     
     int opt = 1; // option pour le socket qui permet de réutiliser l'adresse
     setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)); // permet de réutiliser l'adresse du socket
@@ -23,6 +35,9 @@ Server::Server(int port) : port(port), running(false) {
 Server::~Server() {
     stop(); // arrête le serveur
     close(serverSocket); // ferme le socket
+#ifdef _WIN32 
+    WSACleanup(); // libère les ressources WSADATA
+#endif
 }
 
 void Server::registerCallback(PacketType type, std::function<void(Player*, const void*, size_t)> callback) {

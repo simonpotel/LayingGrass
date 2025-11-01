@@ -1,7 +1,13 @@
 #include "Packet.hpp"
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <cstring>
+
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+#else
+    #include <sys/socket.h>
+    #include <arpa/inet.h>
+#endif
 
 // envoie un paquet sur le socket (Server to Client)
 bool Packet::sendPacket(int socketFd, PacketType type, const void* data, size_t size) {

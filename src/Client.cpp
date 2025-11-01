@@ -1,19 +1,32 @@
 #include "Client.hpp"
 #include "Packet.hpp"
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
 #include <cstring>
 
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    #pragma comment(lib, "ws2_32.lib")
+    #define close(s) closesocket(s)
+    #define socklen_t int
+#else
+    #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <arpa/inet.h>
+    #include <unistd.h>
+#endif
+
 Client::Client() : socketFd(-1), connected(false) {
-    // constructeur qui initialise le descripteur de socket à -1 et le statut de connexion à false
-    // (socket encore fermé et pas connecté)
+#ifdef _WIN32
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2, 2), &wsaData);
+#endif
 }
 
 Client::~Client() {
-    // destructeur qui déconnecte le client si il est connecté
     disconnect();
+#ifdef _WIN32
+    WSACleanup();
+#endif
 }
 
 bool Client::connect(const char* serverIp, int port) {

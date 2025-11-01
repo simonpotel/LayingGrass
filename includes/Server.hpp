@@ -19,6 +19,8 @@ public:
     void start();
     void stop();
 
+    LobbyManager& getLobbyManager() { return lobbyManager; } // retourne le gestionnaire de lobbies
+
 private:
     int serverSocket; // descripteur de socket du serveur
     int port;
@@ -29,6 +31,7 @@ private:
 
     void acceptConnections(); // accepte les connexions des clients
     void handleClient(int clientSocket); // gère les clients connectés
+    void removePlayer(int clientSocket); // retire un joueur et le déconnecte du lobby
 };
 
 #endif

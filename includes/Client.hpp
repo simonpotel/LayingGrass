@@ -16,7 +16,7 @@ public:
     bool isConnected() const { return connected; } // retourne true si le client est connecté au serveur
 
     // packets
-    bool sendConnectRequest(const char* playerName); // envoie une demande de connexion au serveur
+    bool sendConnectRequest(const char* playerName, int lobbyId); // envoie une demande de connexion au serveur avec lobby
     void startReceiving(); // démarre le thread de réception des paquets
     void stopReceiving(); // arrête le thread de réception des paquets
 

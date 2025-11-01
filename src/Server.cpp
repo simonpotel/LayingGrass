@@ -101,7 +101,7 @@ void Server::handleClient(int clientSocket) {
         void* data = nullptr;
 
         if (!Packet::receivePacket(clientSocket, header, data)) {
-            break; // si le paquet n'est pas reçu, on continue la boucle
+            break; // si le paquet n'est pas reçu, on arrête la boucle
         }
 
         // appelle le callback correspondant au type de paquet via le callback manager
@@ -115,6 +115,31 @@ void Server::handleClient(int clientSocket) {
         }
     }
 
+    // le joueur s'est déconnecté, on le retire du lobby et de la liste
+    removePlayer(clientSocket);
     close(clientSocket); // ferme le socket du client
+}
+
+void Server::removePlayer(int clientSocket) {
+    // trouve le joueur et retire-le du lobby
+    for (auto& player : players) {
+        if (player->connection == clientSocket) {
+            // retire le joueur du lobby s'il y est
+            if (player->lobbyId != -1) {
+                Lobby* lobby = lobbyManager.findLobbyById(player->lobbyId);
+                if (lobby) {
+                    lobby->removeConnection(clientSocket);
+                }
+            }
+            break;
+        }
+    }
+
+    // retire le joueur de la liste des joueurs
+    players.erase(
+        std::remove_if(players.begin(), players.end(),
+            [clientSocket](const auto& p) { return p->connection == clientSocket; }),
+        players.end()
+    );
 }
 

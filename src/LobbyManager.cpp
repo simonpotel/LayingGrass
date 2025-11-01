@@ -16,14 +16,26 @@ LobbyManager::~LobbyManager() {
 Lobby* LobbyManager::findOrCreateAvailableLobby() {
     auto it = std::find_if(lobbies.begin(), lobbies.end(),
         [](const auto& lobby) { return lobby->canAcceptPlayers(); });
-    
+
     if (it != lobbies.end()) {
         return it->get();
     }
-    
+
     auto newLobby = std::make_unique<Lobby>(nextLobbyId++);
     lobbies.push_back(std::move(newLobby));
     return lobbies.back().get();
+}
+
+Lobby* LobbyManager::findLobbyById(int lobbyId) {
+    // cherche un lobby par son identifiant
+    auto it = std::find_if(lobbies.begin(), lobbies.end(),
+        [lobbyId](const auto& lobby) { return lobby->lobbyId == lobbyId; });
+
+    if (it != lobbies.end()) {
+        return it->get(); // retourne le lobby trouvé
+    }
+
+    return nullptr; // lobby non trouvé
 }
 
 void LobbyManager::updateLobbies() {

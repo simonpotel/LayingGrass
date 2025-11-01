@@ -6,7 +6,8 @@
 
 // enumération des types de paquets
 enum class PacketType {
-    CONNECT_REQUEST, // demande de connexion au serveur
+    CONNECT_REQUEST, // demande de connexion au serveur avec nom et lobby
+    CONNECT_RESPONSE, // réponse du serveur à la demande de connexion
     LOBBY_LIST // liste des lobbies disponibles
 };
 
@@ -18,7 +19,14 @@ struct PacketHeader { // structure pour le paquet de header
 };
 
 struct ConnectRequestPacket {
-    char playerName[256];
+    char playerName[256]; // nom du joueur
+    int lobbyId; // identifiant du lobby choisi
+};
+
+struct ConnectResponsePacket {
+    bool accepted; // true si la connexion est acceptée
+    char reason[256]; // raison du refus si accepted = false
+    int lobbyId; // identifiant du lobby si accepté
 };
 
 struct LobbyInfo { // structure pour les informations d'un lobby

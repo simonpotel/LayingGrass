@@ -3,3 +3,4 @@ build/
 compile_commands.json
 .vscode/c_cpp_properties.json
 .clangd
+.DS_Store

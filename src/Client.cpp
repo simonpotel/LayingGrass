@@ -54,11 +54,12 @@ void Client::disconnect() {
     connected = false; // le client n'est plus connecté au serveur
 }
 
-bool Client::sendConnectRequest(const char* playerName) {
+bool Client::sendConnectRequest(const char* playerName, int lobbyId) {
     ConnectRequestPacket packet; // structure pour la demande de connexion
     memset(&packet, 0, sizeof(packet)); // initialise la structure à 0
     strncpy(packet.playerName, playerName, sizeof(packet.playerName) - 1); // copie le nom du joueur dans la structure
-    
+    packet.lobbyId = lobbyId; // définit l'identifiant du lobby
+
     return Packet::sendPacket(socketFd, PacketType::CONNECT_REQUEST, &packet, sizeof(ConnectRequestPacket)); // envoie la demande de connexion au serveur
 }
 

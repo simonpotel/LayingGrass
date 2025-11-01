@@ -1,0 +1,129 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            client_ext: 
+            server_ext: 
+            client_path: build/LayingGrassClient
+            server_path: build/LayingGrassServer
+          - os: macos-latest
+            client_ext: 
+            server_ext: 
+            client_path: build/LayingGrassClient
+            server_path: build/LayingGrassServer
+          - os: windows-latest
+            client_ext: .exe
+            server_ext: .exe
+            client_path: build/Release/LayingGrassClient.exe
+            server_path: build/Release/LayingGrassServer.exe
+    
+    permissions:
+      contents: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Create build directory
+      run: mkdir -p build
+    
+    - name: Configure CMake
+      run: cmake -S . -B build
+    
+    - name: Build
+      run: cmake --build build --config Release
+    
+    - name: Upload client artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: LayingGrassClient-${{ matrix.os }}
+        path: ${{ matrix.client_path }}
+        retention-days: 1
+    
+    - name: Upload server artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: LayingGrassServer-${{ matrix.os }}
+        path: ${{ matrix.server_path }}
+        retention-days: 1
+    
+  release:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+    - name: Prepare release directory
+      run: mkdir -p release
+    
+    - name: Download Ubuntu client
+      uses: actions/download-artifact@v4
+      with:
+        name: LayingGrassClient-ubuntu-latest
+        path: release/ubuntu/
+    
+    - name: Download Ubuntu server
+      uses: actions/download-artifact@v4
+      with:
+        name: LayingGrassServer-ubuntu-latest
+        path: release/ubuntu/
+    
+    - name: Download macOS client
+      uses: actions/download-artifact@v4
+      with:
+        name: LayingGrassClient-macos-latest
+        path: release/macos/
+    
+    - name: Download macOS server
+      uses: actions/download-artifact@v4
+      with:
+        name: LayingGrassServer-macos-latest
+        path: release/macos/
+    
+    - name: Download Windows client
+      uses: actions/download-artifact@v4
+      with:
+        name: LayingGrassClient-windows-latest
+        path: release/windows/
+    
+    - name: Download Windows server
+      uses: actions/download-artifact@v4
+      with:
+        name: LayingGrassServer-windows-latest
+        path: release/windows/
+    
+    - name: Rename binaries
+      run: |
+        mv release/ubuntu/LayingGrassClient release/LayingGrassClient-ubuntu
+        mv release/ubuntu/LayingGrassServer release/LayingGrassServer-ubuntu
+        mv release/macos/LayingGrassClient release/LayingGrassClient-macos
+        mv release/macos/LayingGrassServer release/LayingGrassServer-macos
+        mv release/windows/LayingGrassClient.exe release/LayingGrassClient-windows.exe
+        mv release/windows/LayingGrassServer.exe release/LayingGrassServer-windows.exe
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ github.run_number }}
+        name: Release v${{ github.run_number }}
+        files: release/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

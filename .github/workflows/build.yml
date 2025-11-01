@@ -48,17 +48,20 @@ jobs:
     - name: Build
       run: cmake --build build --config Release
     
-    - name: Run tests
+    - name: Run tests (Windows)
+      if: matrix.os == 'windows-latest'
+      run: cd build && ctest -C Release --output-on-failure
+    
+    - name: Run tests (Ubuntu)
+      if: matrix.os == 'ubuntu-latest'
       run: |
-        if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          cd build && ctest -C Release --output-on-failure
-        elif [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-          export DISPLAY=:99
-          Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-          cd build && ctest --output-on-failure
-        else
-          cd build && ctest --output-on-failure
-        fi
+        export DISPLAY=:99
+        Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+        cd build && ctest --output-on-failure
+    
+    - name: Run tests (macOS)
+      if: matrix.os == 'macos-latest'
+      run: cd build && ctest --output-on-failure
     
     - name: Upload client artifact
       uses: actions/upload-artifact@v4
@@ -139,4 +142,3 @@ jobs:
         files: release/*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-

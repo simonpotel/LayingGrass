@@ -50,6 +50,17 @@ function(copy_sfml_dlls target)
     endif()
 endfunction()
 
+function(copy_gtest_dlls target)
+    if(WIN32)
+        add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_FILE:gtest>
+                $<TARGET_FILE:gtest_main>
+                $<TARGET_FILE_DIR:${target}>
+        )
+    endif()
+endfunction()
+
 add_executable(LayingGrassClient client.cpp ${SOURCES})
 target_link_libraries(LayingGrassClient PRIVATE sfml-graphics sfml-window sfml-system)
 copy_sfml_dlls(LayingGrassClient)
@@ -83,6 +94,7 @@ if(TEST_SOURCES)
     )
     
     copy_sfml_dlls(LayingGrassTests)
+    copy_gtest_dlls(LayingGrassTests)
     
     include(GoogleTest)
     gtest_discover_tests(LayingGrassTests)

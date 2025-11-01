@@ -10,7 +10,6 @@ GameState* g_gameState = nullptr;
 
 void handleLobbyList(const void* data, size_t size) {
     const LobbyListPacket* packet = (const LobbyListPacket*)data;
-    std::cout << "Lobbies availables: " << packet->lobbyCount << std::endl;
 
     // met à jour la liste des lobbies dans le gamestate
     if (g_gameState) {

@@ -14,7 +14,7 @@ void handleConnectRequest(Player* player, const void* data, size_t size) {
 
 int main() {
     Server server(5555);
-    server.registerCallback(PacketType::CONNECT_REQUEST, handleConnectRequest);
+    server.getCallbackManager().registerCallback(PacketType::CONNECT_REQUEST, handleConnectRequest);
     server.start();
     
     while (true) {

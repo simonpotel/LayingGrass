@@ -1,6 +1,7 @@
 #include "Server.hpp"
 #include <thread>
-#include <cstdint>
+#include <chrono>
+#include <cstring>
 
 #ifdef _WIN32
     #include <winsock2.h>
@@ -33,26 +34,33 @@ Server::Server(int port) : port(port), running(false) {
     address.sin_addr.s_addr = INADDR_ANY; // adresse IP du serveur
     address.sin_port = htons(port); // port du serveur
     
-    bind(serverSocket, (sockaddr*)&address, sizeof(address)); // lie le socket à l'adresse
+    if (bind(serverSocket, (sockaddr*)&address, sizeof(address)) < 0) {
+        // erreur lors du bind du socket à l'adresse
+    }
     listen(serverSocket, 30); // écoute les connexions des clients (30 max)
 }
 
 Server::~Server() {
     stop(); // arrête le serveur
+    lobbyManager.stop(); // arrête le gestionnaire de lobbies
     close(serverSocket); // ferme le socket
 #ifdef _WIN32 
     WSACleanup(); // libère les ressources WSADATA
 #endif
 }
 
-void Server::registerCallback(PacketType type, std::function<void(Player*, const void*, size_t)> callback) {
-    callbacks[type] = callback; // enregistre le callback pour le type de paquet dans la map des callbacks
-}
-
 void Server::start() {
     running = true; // le serveur est en cours d'exécution
     std::thread acceptThread(&Server::acceptConnections, this); // crée un thread pour accepter les connexions des clients
     acceptThread.detach(); // détache le thread pour que le serveur puisse continuer à fonctionner
+    
+    lobbyManager.startPeriodicUpdates([this](const LobbyListPacket& packet) {
+        for (auto& player : players) {
+            if (player->lobbyId == -1) { // si le joueur n'est pas assigné à un lobby
+                Packet::sendPacket(player->connection, PacketType::LOBBY_LIST, &packet, sizeof(LobbyListPacket)); // envoie la liste des lobbies au joueur
+            }
+        }
+    });
 }
 
 void Server::stop() {
@@ -85,49 +93,28 @@ void Server::handleClient(int clientSocket) {
             break;
         }
     }
-    
+
     if (!player) return; // si le joueur n'est pas trouvé, on continue la boucle
-    
+
     while (running) {
         PacketHeader header; // structure pour le paquet de header
         void* data = nullptr;
-        
-        if (!receivePacket(clientSocket, header, data)) {
+
+        if (!Packet::receivePacket(clientSocket, header, data)) {
             break; // si le paquet n'est pas reçu, on continue la boucle
         }
-        
-        auto it = callbacks.find(header.type); // on cherche le callback pour le type de paquet
-        if (it != callbacks.end()) {
-            it->second(player, data, header.size); // on appelle le callback pour le type de paquet
+
+        // appelle le callback correspondant au type de paquet via le callback manager
+        auto* callback = callbackManager.getCallback(header.type);
+        if (callback) {
+            (*callback)(player, data, header.size);
         }
-        
+
         if (data) {
             delete[] (char*)data; // on libère la mémoire allouée pour le paquet
         }
     }
-    
-    close(clientSocket); // ferme le socket du client
-}
 
-bool Server::receivePacket(int socket, PacketHeader& header, void*& data) {
-    int typeNetwork, sizeNetwork;
-    
-    if (recv(socket, (char*)&typeNetwork, sizeof(int), 0) <= 0) {
-        return false;
-    }
-    
-    if (recv(socket, (char*)&sizeNetwork, sizeof(int), 0) <= 0) {
-        return false;
-    }
-    
-    header.type = static_cast<PacketType>(ntohl(static_cast<uint32_t>(typeNetwork)));
-    header.size = ntohl(static_cast<uint32_t>(sizeNetwork));
-    
-    if (header.size > 0) { 
-        data = new char[header.size];
-        recv(socket, (char*)data, header.size, 0);
-    }
-    
-    return true;
+    close(clientSocket); // ferme le socket du client
 }
 

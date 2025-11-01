@@ -1,5 +1,6 @@
 #include "Packet.hpp"
 #include <cstring>
+#include <cstdint>
 
 #ifdef _WIN32
     #include <winsock2.h>
@@ -18,18 +19,17 @@ bool Packet::sendPacket(int socketFd, PacketType type, const void* data, size_t 
     uint32_t typeNetwork = htonl(static_cast<uint32_t>(type)); // convertit le type du paquet en format binaire
     uint32_t sizeNetwork = htonl(static_cast<uint32_t>(size)); // convertit la taille du paquet en format binaire
     
-    if (send(socketFd, &typeNetwork, sizeof(uint32_t), 0) < 0) {
+    if (send(socketFd, (const char*)&typeNetwork, sizeof(uint32_t), 0) < 0) {
         return false; // échec de l'envoi
     }
     
-    if (send(socketFd, &sizeNetwork, sizeof(uint32_t), 0) < 0) {
+    if (send(socketFd, (const char*)&sizeNetwork, sizeof(uint32_t), 0) < 0) {
         return false; // échec de l'envoi
     }
     
-    if (size > 0 && send(socketFd, data, size, 0) < 0) {
+    if (size > 0 && send(socketFd, (const char*)data, size, 0) < 0) {
         return false; // échec de l'envoi
     }
     
     return true; // succès de l'envoi
 }
-

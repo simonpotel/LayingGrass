@@ -79,7 +79,7 @@ jobs:
     
   release:
     needs: build
-    if: github.ref == 'refs/heads/main' && needs.build.result == 'success'
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && needs.build.result == 'success'
     runs-on: ubuntu-latest
     
     permissions:

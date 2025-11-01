@@ -58,7 +58,17 @@ if(TEST_SOURCES)
         sfml-system
     )
     include(GoogleTest)
-    gtest_discover_tests(LayingGrassTests)
+    if(WIN32)
+        add_custom_command(TARGET LayingGrassTests POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:sfml-window>
+            $<TARGET_FILE_DIR:LayingGrassTests>
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:sfml-system>
+            $<TARGET_FILE_DIR:LayingGrassTests>
+        )
+    endif()
+    gtest_add_tests(TARGET LayingGrassTests)
 endif()
 
 

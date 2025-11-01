@@ -5,6 +5,20 @@ Laying Grass is a tile-placement game where players place grass tiles on a grid 
 ![C++](https://img.shields.io/badge/c++-%2300599C.svg?style=for-the-badge&logo=c%2B%2B&logoColor=white)
 ![CMake](https://img.shields.io/badge/CMake-%23008FBA.svg?style=for-the-badge&logo=cmake&logoColor=white)
 
+## Prerequisites
+
+### Linux
+```bash
+sudo apt-get update
+sudo apt-get install -y libx11-dev libxrandr-dev libgl1-mesa-dev libopenal-dev libflac-dev libvorbis-dev
+```
+
+### macOS
+No additional dependencies required.
+
+### Windows
+No additional dependencies required.
+
 ## Build
 
 ```bash

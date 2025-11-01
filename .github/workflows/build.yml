@@ -33,6 +33,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Install dependencies (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libx11-dev libxrandr-dev libgl1-mesa-dev libopenal-dev libflac-dev libvorbis-dev
+    
     - name: Create build directory
       run: mkdir -p build
     

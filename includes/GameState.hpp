@@ -11,7 +11,9 @@ enum class ClientState {
     SELECTING_LOBBY, // sélection d'un lobby
     ENTERING_USERNAME, // saisie du nom d'utilisateur
     WAITING_FOR_RESPONSE, // en attente de la réponse du serveur
-    IN_LOBBY // dans un lobby
+    IN_LOBBY, // dans un lobby
+    IN_GAME, // en jeu
+    GAME_END // fin de partie
 };
 
 // classe pour gérer l'état du client

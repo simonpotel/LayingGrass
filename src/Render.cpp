@@ -5,6 +5,8 @@
 #include "Render/screens/EnteringUsername.hpp"
 #include "Render/screens/WaitingForResponse.hpp"
 #include "Render/screens/InLobby.hpp"
+#include "Render/screens/InGame.hpp"
+#include "Render/screens/GameEnd.hpp"
 
 std::unique_ptr<sf::RenderWindow> Render::createWindow() {
     return std::make_unique<sf::RenderWindow>(sf::VideoMode(800, 600), "LayingGrass Client");
@@ -22,6 +24,10 @@ std::unique_ptr<Render> Render::createScreen(ClientState state) {
             return std::make_unique<WaitingForResponse>();
         case ClientState::IN_LOBBY:
             return std::make_unique<InLobby>();
+        case ClientState::IN_GAME:
+            return std::make_unique<InGame>();
+        case ClientState::GAME_END:
+            return std::make_unique<GameEnd>();
         default:
             return std::make_unique<WaitingForLobbies>();
     }

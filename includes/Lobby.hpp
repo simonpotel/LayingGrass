@@ -1,6 +1,7 @@
 #ifndef LOBBY_HPP
 #define LOBBY_HPP
 
+#include "Packet.hpp"
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -17,6 +18,8 @@ public:
 
     bool addConnection(int connection, const std::string& playerName); // ajoute une connexion au lobby avec le nom du joueur
     void removeConnection(int connection); // retire une connexion du lobby
+    void clear(); // vide le lobby et le réinitialise
+    void broadcast(PacketType type, const void* data, size_t size) const; // envoie un paquet à tous les joueurs du lobby
     int getPlayerCount() const { return connections.size(); } // retourne le nombre de joueurs connectés au lobby
     bool isFull() const { return connections.size() >= 2; } // retourne true si le lobby est plein (2 joueurs max)
     bool canAcceptPlayers() const { return !gameStarted && !isFull(); } // retourne true si le lobby peut accepter des joueurs

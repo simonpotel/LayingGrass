@@ -143,3 +143,18 @@ void Server::removePlayer(int clientSocket) {
     );
 }
 
+void Server::clearLobbyAndRemovePlayers(int lobbyId) {
+    Lobby* lobby = lobbyManager.findLobbyById(lobbyId);
+    if (!lobby) {
+        return;
+    }
+
+    for (auto& player : players) {
+        if (player->lobbyId == lobbyId) {
+            player->lobbyId = -1;
+        }
+    }
+
+    lobby->clear();
+}
+

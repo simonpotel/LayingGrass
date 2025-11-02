@@ -3,50 +3,53 @@
 #include "Client.hpp"
 #include "Packet.hpp"
 #include <thread>
-#include <chrono>
 #include <atomic>
 #include <cstring>
+#include <chrono>
 
-// test de réception du packet de liste des lobbies depuis le serveur
 TEST(Lobby, ReceiveLobbyListPacket) {
     const int TEST_PORT = 12345;
-    std::atomic<bool> packetReceived{false}; // flag atomique (thread-safe)
+    std::atomic<bool> packetReceived{false};
 
-    Server server(TEST_PORT); // crée le serveur sur le port de test
-    server.start(); // démarre le serveur
+    Server server(TEST_PORT);
+    server.start();
 
-    Client client; // crée le client
+    Client client;
 
-    // tente de se connecter au serveur (retry si pas encore prêt)
-    bool connected = false;
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 50; ++i) {
         if (client.connect("127.0.0.1", TEST_PORT)) {
-            connected = true;
             break;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::yield();
     }
-    ASSERT_TRUE(connected); // vérifie que la connexion a réussi
+    ASSERT_TRUE(client.isConnected());
 
     client.getCallbackManager().registerCallback(PacketType::LOBBY_LIST,
         [&packetReceived](const void* data, size_t size) {
             if (size == sizeof(LobbyListPacket)) {
-                packetReceived = true; // marque le packet comme reçu (atomique)
+                packetReceived = true;
             }
         }
     );
 
-    client.startReceiving(); // démarre la réception des packets
+    client.startReceiving();
 
-    // attend que le packet soit reçu (max 3 secondes)
-    for (int i = 0; i < 60 && !packetReceived; ++i) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    auto startTime = std::chrono::steady_clock::now();
+    const auto maxWaitTime = std::chrono::seconds(5);
+    
+    while (!packetReceived.load()) {
+        auto currentTime = std::chrono::steady_clock::now();
+        if (currentTime - startTime > maxWaitTime) {
+            break;
+        }
+        std::this_thread::yield();
     }
 
-    EXPECT_TRUE(packetReceived); // vérifie que le packet a été reçu
+    EXPECT_TRUE(packetReceived.load());
 
-    client.disconnect(); // déconnecte le client
-    server.stop(); // arrête le serveur
+    client.stopReceiving();
+    client.disconnect();
+    server.stop();
 }
 
 TEST(Lobby, FullLobbyRejectionAndNewLobbyCreation) {
@@ -115,38 +118,29 @@ TEST(Lobby, FullLobbyRejectionAndNewLobbyCreation) {
     std::atomic<bool> lobbyListReceived{false}; // flag atomique pour la réception de la liste des lobbies
     LobbyListPacket receivedLobbyList; // liste des lobbies reçue
     
-    // connexion du premier client au serveur
-    bool connected1 = false;
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 50; ++i) {
         if (client1.connect("127.0.0.1", TEST_PORT)) {
-            connected1 = true;
             break;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::yield();
     }
-    ASSERT_TRUE(connected1); // vérifie que la connexion du premier client a réussi
+    ASSERT_TRUE(client1.isConnected());
     
-    // connexion du deuxième client au serveur
-    bool connected2 = false;
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 50; ++i) {
         if (client2.connect("127.0.0.1", TEST_PORT)) {
-            connected2 = true;
             break;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::yield();
     }
-    ASSERT_TRUE(connected2); // vérifie que la connexion du deuxième client a réussi
+    ASSERT_TRUE(client2.isConnected());
     
-    // connexion du troisième client au serveur
-    bool connected3 = false;
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 50; ++i) {
         if (client3.connect("127.0.0.1", TEST_PORT)) {
-            connected3 = true;
             break;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::yield();
     }
-    ASSERT_TRUE(connected3); // vérifie que la connexion du troisième client a réussi
+    ASSERT_TRUE(client3.isConnected());
     
     // enregistrement des callbacks pour le premier client
     client1.getCallbackManager().registerCallback(PacketType::CONNECT_RESPONSE,
@@ -193,29 +187,30 @@ TEST(Lobby, FullLobbyRejectionAndNewLobbyCreation) {
     client2.startReceiving(); // démarre la réception des packets du deuxième client
     client3.startReceiving(); // démarre la réception des packets du troisième client
     
-    // envoie la demande de connexion au lobby 1 pour le premier client
     client1.sendConnectRequest("Player1", 1);
     
-    // attend que le premier client soit connecté au lobby
-    for (int i = 0; i < 60 && !client1Connected; ++i) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    for (int i = 0; i < 1000 && !client1Connected.load(); ++i) {
+        std::this_thread::yield();
     }
-    ASSERT_TRUE(client1Connected); // vérifie que le premier client est connecté au lobby
+    ASSERT_TRUE(client1Connected.load());
     
-    // envoie la demande de connexion au lobby 1 pour le deuxième client
     client2.sendConnectRequest("Player2", 1);
     
-    // attend que le deuxième client soit connecté au lobby
-    for (int i = 0; i < 60 && !client2Connected; ++i) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    for (int i = 0; i < 1000 && !client2Connected.load(); ++i) {
+        std::this_thread::yield();
     }
-    ASSERT_TRUE(client2Connected); // vérifie que le deuxième client est connecté au lobby
+    ASSERT_TRUE(client2Connected.load());
     
-    // attend que la liste des lobbies soit reçue (le serveur envoie périodiquement toutes les 2 secondes)
-    for (int i = 0; i < 80 && !lobbyListReceived; ++i) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    auto startTime = std::chrono::steady_clock::now();
+    const auto maxWaitTime = std::chrono::seconds(5);
+    while (!lobbyListReceived.load()) {
+        auto currentTime = std::chrono::steady_clock::now();
+        if (currentTime - startTime > maxWaitTime) {
+            break;
+        }
+        std::this_thread::yield();
     }
-    ASSERT_TRUE(lobbyListReceived); // vérifie que la liste des lobbies a été reçue
+    ASSERT_TRUE(lobbyListReceived.load());
     
     // vérifie qu'il y a au moins 2 lobbies (le premier plein et un nouveau créé)
     EXPECT_GE(receivedLobbyList.lobbyCount, 2); // vérifie qu'il y a au moins 2 lobbies
@@ -231,19 +226,18 @@ TEST(Lobby, FullLobbyRejectionAndNewLobbyCreation) {
     }
     ASSERT_TRUE(foundFullLobby); // vérifie que le lobby 1 est présent dans la liste
     
-    // tente de connecter le troisième client au lobby 1 (qui est plein)
     client3.sendConnectRequest("Player3", 1);
     
-    // attend que le rejet soit reçu
-    for (int i = 0; i < 60 && !client3Rejected; ++i) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    for (int i = 0; i < 1000 && !client3Rejected.load(); ++i) {
+        std::this_thread::yield();
     }
-    EXPECT_TRUE(client3Rejected); // vérifie que le troisième client a été rejeté du lobby plein
+    EXPECT_TRUE(client3Rejected.load());
     
-    // déconnecte tous les clients
-    client1.disconnect(); // déconnecte le premier client
-    client2.disconnect(); // déconnecte le deuxième client
-    client3.disconnect(); // déconnecte le troisième client
-    
-    server.stop(); // arrête le serveur
+    client1.stopReceiving();
+    client2.stopReceiving();
+    client3.stopReceiving();
+    client1.disconnect();
+    client2.disconnect();
+    client3.disconnect();
+    server.stop();
 }

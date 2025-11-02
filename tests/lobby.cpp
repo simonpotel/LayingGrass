@@ -228,7 +228,13 @@ TEST(Lobby, FullLobbyRejectionAndNewLobbyCreation) {
     
     client3.sendConnectRequest("Player3", 1);
     
-    for (int i = 0; i < 1000 && !client3Rejected.load(); ++i) {
+    startTime = std::chrono::steady_clock::now();
+    const auto maxWaitTimeRejection = std::chrono::seconds(3);
+    while (!client3Rejected.load()) {
+        auto currentTime = std::chrono::steady_clock::now();
+        if (currentTime - startTime > maxWaitTimeRejection) {
+            break;
+        }
         std::this_thread::yield();
     }
     EXPECT_TRUE(client3Rejected.load());

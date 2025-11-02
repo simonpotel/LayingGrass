@@ -37,6 +37,26 @@ void handleConnectResponse(const void* data, size_t size) {
     }
 }
 
+void handleGameStart(const void* data, size_t size) {
+    const GameStartPacket* packet = (const GameStartPacket*)data;
+
+    std::cout << "Game started in lobby " << packet->lobbyId << std::endl;
+    if (g_gameState) {
+        g_gameState->setState(ClientState::IN_GAME);
+    }
+}
+
+void handleGameEnd(const void* data, size_t size) {
+    const GameEndPacket* packet = (const GameEndPacket*)data;
+
+    std::cout << "Game ended in lobby " << packet->lobbyId << std::endl;
+    if (g_gameState) {
+        g_gameState->setState(ClientState::GAME_END);
+        g_gameState->setRequestSent(false);
+        g_gameState->setCurrentLobby(-1);
+    }
+}
+
 int main() {
     Client client;
     GameState gameState;
@@ -55,6 +75,8 @@ int main() {
     // enregistrement des callbacks
     client.getCallbackManager().registerCallback(PacketType::LOBBY_LIST, handleLobbyList);
     client.getCallbackManager().registerCallback(PacketType::CONNECT_RESPONSE, handleConnectResponse);
+    client.getCallbackManager().registerCallback(PacketType::GAME_START, handleGameStart);
+    client.getCallbackManager().registerCallback(PacketType::GAME_END, handleGameEnd);
 
     // démarre la réception des paquets
     client.startReceiving();
@@ -82,7 +104,4 @@ int main() {
         // rendu
         Render::render(*window, gameState);
     }
-
-    return 0;
 }
-

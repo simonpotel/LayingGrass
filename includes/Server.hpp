@@ -20,6 +20,7 @@ public:
     void stop();
 
     LobbyManager& getLobbyManager() { return lobbyManager; } // retourne le gestionnaire de lobbies
+    void clearLobbyAndRemovePlayers(int lobbyId);
 
 private:
     int serverSocket; // descripteur de socket du serveur

@@ -27,6 +27,18 @@ void Lobby::removeConnection(int connection) {
     playerNames.erase(connection); // on retire le nom du joueur associé
 }
 
+void Lobby::clear() {
+    connections.clear();
+    playerNames.clear();
+    gameStarted = false;
+}
+
+void Lobby::broadcast(PacketType type, const void* data, size_t size) const {
+    for (int conn : connections) {
+        Packet::sendPacket(conn, type, data, size);
+    }
+}
+
 bool Lobby::hasPlayerName(const std::string& name) const {
     // parcourt tous les noms de joueurs dans le lobby
     for (const auto& pair : playerNames) {

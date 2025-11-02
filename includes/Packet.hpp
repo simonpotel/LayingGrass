@@ -8,7 +8,9 @@
 enum class PacketType {
     CONNECT_REQUEST, // demande de connexion au serveur avec nom et lobby
     CONNECT_RESPONSE, // réponse du serveur à la demande de connexion
-    LOBBY_LIST // liste des lobbies disponibles
+    LOBBY_LIST, // liste des lobbies disponibles
+    GAME_START, // début de la partie
+    GAME_END // fin de la partie
 };
 
 #include "PacketCallback.hpp"
@@ -38,6 +40,14 @@ struct LobbyInfo { // structure pour les informations d'un lobby
 struct LobbyListPacket { // structure pour la liste des lobbies
     int lobbyCount; // nombre de lobbies dans la liste
     LobbyInfo lobbies[100]; // tableau des lobbies (max 100 lobbies)
+};
+
+struct GameStartPacket {
+    int lobbyId; // identifiant du lobby
+};
+
+struct GameEndPacket {
+    int lobbyId; // identifiant du lobby
 };
 
 namespace Packet {

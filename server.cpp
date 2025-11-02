@@ -4,6 +4,7 @@
 #include <thread>
 #include <chrono>
 #include <cstring>
+#include <vector>
 
 // variable globale pour accéder au serveur dans les callbacks
 Server* g_server = nullptr;
@@ -49,12 +50,42 @@ void handleConnectRequest(Player* player, const void* data, size_t size) {
         strncpy(response.reason, "Connection accepted", sizeof(response.reason) - 1);
 
         std::cout << "Player " << player->playerName << " connected to lobby " << packet->lobbyId << std::endl;
+
+        Packet::sendPacket(player->connection, PacketType::CONNECT_RESPONSE, &response, sizeof(response)); // envoie la réponse de connexion au client
+
+        if (lobby->isFull()) { // si le lobby est plein, on lance la partie
+            lobby->gameStarted = true;
+            GameStartPacket gameStartPacket;
+            gameStartPacket.lobbyId = packet->lobbyId;
+
+            lobby->broadcast(PacketType::GAME_START, &gameStartPacket, sizeof(GameStartPacket)); // envoie le paquet de début de partie à tous les clients du lobby
+
+            std::cout << "Lobby " << packet->lobbyId << " is full, starting game!" << std::endl; // affiche un message dans la console
+
+            int lobbyId = packet->lobbyId;
+            
+            std::thread gameEndThread([lobbyId]() { // crée un thread pour la fin de la partie
+                std::this_thread::sleep_for(std::chrono::seconds(5)); // attends 5sec pour finir la game (seulement pour debug pour le moment à retirer plus tard)
+
+                if (g_server) { // si le serveur existe, on récupère le lobby
+                    Lobby* lobby = g_server->getLobbyManager().findLobbyById(lobbyId); // récupère le lobby par son id
+                    if (lobby) { // si le lobby existe, on envoie le paquet de fin de partie à tous les clients du lobby
+                        GameEndPacket gameEndPacket;
+                        gameEndPacket.lobbyId = lobbyId;
+                        lobby->broadcast(PacketType::GAME_END, &gameEndPacket, sizeof(GameEndPacket)); // envoie le paquet de fin de partie à tous les clients du lobby
+                    }
+                    g_server->clearLobbyAndRemovePlayers(lobbyId); // vide le lobby et retire les joueurs du lobby
+                }
+                
+                std::cout << "Game ended in lobby " << lobbyId << std::endl;
+            });
+            gameEndThread.detach();
+        }
     } else {
         response.accepted = false;
         strncpy(response.reason, "Error adding to lobby", sizeof(response.reason) - 1);
+        Packet::sendPacket(player->connection, PacketType::CONNECT_RESPONSE, &response, sizeof(response)); // envoie la réponse de connexion au client
     }
-
-    Packet::sendPacket(player->connection, PacketType::CONNECT_RESPONSE, &response, sizeof(response));
 }
 
 int main() {

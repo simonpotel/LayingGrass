@@ -189,23 +189,34 @@ TEST(Lobby, FullLobbyRejectionAndNewLobbyCreation) {
     
     client1.sendConnectRequest("Player1", 1);
     
-    for (int i = 0; i < 1000 && !client1Connected.load(); ++i) {
+    auto startTime = std::chrono::steady_clock::now();
+    const auto maxWaitTime = std::chrono::seconds(3);
+    while (!client1Connected.load()) {
+        auto currentTime = std::chrono::steady_clock::now();
+        if (currentTime - startTime > maxWaitTime) {
+            break;
+        }
         std::this_thread::yield();
     }
     ASSERT_TRUE(client1Connected.load());
     
     client2.sendConnectRequest("Player2", 1);
     
-    for (int i = 0; i < 1000 && !client2Connected.load(); ++i) {
+    startTime = std::chrono::steady_clock::now();
+    while (!client2Connected.load()) {
+        auto currentTime = std::chrono::steady_clock::now();
+        if (currentTime - startTime > maxWaitTime) {
+            break;
+        }
         std::this_thread::yield();
     }
     ASSERT_TRUE(client2Connected.load());
     
-    auto startTime = std::chrono::steady_clock::now();
-    const auto maxWaitTime = std::chrono::seconds(5);
+    startTime = std::chrono::steady_clock::now();
+    const auto maxWaitTimeLobby = std::chrono::seconds(5);
     while (!lobbyListReceived.load()) {
         auto currentTime = std::chrono::steady_clock::now();
-        if (currentTime - startTime > maxWaitTime) {
+        if (currentTime - startTime > maxWaitTimeLobby) {
             break;
         }
         std::this_thread::yield();

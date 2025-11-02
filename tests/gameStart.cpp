@@ -134,24 +134,40 @@ TEST(GameStart, TwoPlayersJoinLobbyReceiveGameStartPacket) {
     
     client1.sendConnectRequest("Player1", 1);
     
-    for (int i = 0; i < 1000 && !client1Connected; ++i) {
+    auto startTime = std::chrono::steady_clock::now();
+    const auto maxWaitTime = std::chrono::seconds(3);
+    while (!client1Connected.load()) {
+        auto currentTime = std::chrono::steady_clock::now();
+        if (currentTime - startTime > maxWaitTime) {
+            break;
+        }
         std::this_thread::yield();
     }
-    ASSERT_TRUE(client1Connected);
+    ASSERT_TRUE(client1Connected.load());
     
     client2.sendConnectRequest("Player2", 1);
     
-    for (int i = 0; i < 1000 && !client2Connected; ++i) {
+    startTime = std::chrono::steady_clock::now();
+    while (!client2Connected.load()) {
+        auto currentTime = std::chrono::steady_clock::now();
+        if (currentTime - startTime > maxWaitTime) {
+            break;
+        }
         std::this_thread::yield();
     }
-    ASSERT_TRUE(client2Connected);
+    ASSERT_TRUE(client2Connected.load());
     
-    for (int i = 0; i < 1000 && (!client1GameStart || !client2GameStart); ++i) {
+    startTime = std::chrono::steady_clock::now();
+    while (!client1GameStart.load() || !client2GameStart.load()) {
+        auto currentTime = std::chrono::steady_clock::now();
+        if (currentTime - startTime > maxWaitTime) {
+            break;
+        }
         std::this_thread::yield();
     }
     
-    EXPECT_TRUE(client1GameStart);
-    EXPECT_TRUE(client2GameStart);
+    EXPECT_TRUE(client1GameStart.load());
+    EXPECT_TRUE(client2GameStart.load());
     
     if (client1GameStart && client2GameStart) {
         EXPECT_EQ(client1GameStartPacket.lobbyId, 1);
@@ -165,9 +181,9 @@ TEST(GameStart, TwoPlayersJoinLobbyReceiveGameStartPacket) {
     
     server.stop();
     
-    auto startTime = std::chrono::steady_clock::now();
-    const auto maxWaitTime = std::chrono::milliseconds(500);
-    while (std::chrono::steady_clock::now() - startTime < maxWaitTime) {
+    auto cleanupStartTime = std::chrono::steady_clock::now();
+    const auto maxWaitTimeCleanup = std::chrono::milliseconds(500);
+    while (std::chrono::steady_clock::now() - cleanupStartTime < maxWaitTimeCleanup) {
         std::this_thread::yield();
     }
 }

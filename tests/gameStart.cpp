@@ -5,6 +5,7 @@
 #include <thread>
 #include <atomic>
 #include <cstring>
+#include <chrono>
 
 TEST(GameStart, TwoPlayersJoinLobbyReceiveGameStartPacket) {
     const int TEST_PORT = 12347;
@@ -161,6 +162,13 @@ TEST(GameStart, TwoPlayersJoinLobbyReceiveGameStartPacket) {
     client2.stopReceiving();
     client1.disconnect();
     client2.disconnect();
+    
     server.stop();
+    
+    auto startTime = std::chrono::steady_clock::now();
+    const auto maxWaitTime = std::chrono::milliseconds(500);
+    while (std::chrono::steady_clock::now() - startTime < maxWaitTime) {
+        std::this_thread::yield();
+    }
 }
 

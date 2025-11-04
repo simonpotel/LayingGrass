@@ -51,12 +51,17 @@ void handleGameEnd(const void* data, size_t size) {
 
     std::cout << "Game ended in lobby " << packet->lobbyId << std::endl;
     if (g_gameState) {
-        g_gameState->setGameEndWinnerId(packet->winnerId);
-        g_gameState->setGameEndLobbyId(packet->lobbyId);
-        g_gameState->setGameEndWinnerName(packet->winnerName);
+        int winnerId = packet->winnerId;
+        int lobbyId = packet->lobbyId;
+        std::string winnerName = packet->winnerName;
+        
+        g_gameState->~GameState();
+        new(g_gameState) GameState();
+        
+        g_gameState->setGameEndWinnerId(winnerId);
+        g_gameState->setGameEndLobbyId(lobbyId);
+        g_gameState->setGameEndWinnerName(winnerName);
         g_gameState->setState(ClientState::GAME_END);
-        g_gameState->setRequestSent(false);
-        g_gameState->setCurrentLobby(-1);
     }
 }
 

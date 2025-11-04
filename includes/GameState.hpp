@@ -64,6 +64,14 @@ public:
     int getTurnCount() const { return turnCount; }
     bool isGameOver() const { return gameOver; }
     int getWinnerId() const { return winnerId; }
+    
+    // gestion du winnerId du GameEnd
+    void setGameEndWinnerId(int winnerId) { gameEndWinnerId = winnerId; }
+    int getGameEndWinnerId() const { return gameEndWinnerId; }
+    void setGameEndLobbyId(int lobbyId) { gameEndLobbyId = lobbyId; }
+    int getGameEndLobbyId() const { return gameEndLobbyId; }
+    void setGameEndWinnerName(const std::string& name) { gameEndWinnerName = name; }
+    const std::string& getGameEndWinnerName() const { return gameEndWinnerName; }
 
 private:
     ClientState currentState; // état actuel du client
@@ -80,6 +88,9 @@ private:
     int turnCount; // nombre de tours effectués
     bool gameOver; // true si la partie est terminée
     int winnerId; // identifiant de la couleur du gagnant
+    int gameEndWinnerId; // identifiant de la couleur du gagnant stocké pour l'affichage GameEnd
+    int gameEndLobbyId; // identifiant du lobby stocké pour l'affichage GameEnd
+    std::string gameEndWinnerName; // nom du joueur gagnant stocké pour l'affichage GameEnd
 };
 
 #endif

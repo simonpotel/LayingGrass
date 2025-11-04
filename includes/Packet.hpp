@@ -57,6 +57,8 @@ struct GameStartPacket {
 
 struct GameEndPacket {
     int lobbyId; // identifiant du lobby
+    int winnerId; // identifiant de la couleur du gagnant (-1 si pas de gagnant)
+    char winnerName[256]; // nom du joueur gagnant
 };
 
 struct CellClickPacket {

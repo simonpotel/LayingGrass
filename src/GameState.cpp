@@ -28,7 +28,9 @@ GameState::GameState()
       currentTurnColorId(-1),
       turnCount(0),
       gameOver(false),
-      winnerId(-1) {
+      winnerId(-1),
+      gameEndWinnerId(-1),
+      gameEndLobbyId(-1) {
     board.resize(20);
     for (int i = 0; i < 20; ++i) {
         board[i].resize(20, -1);

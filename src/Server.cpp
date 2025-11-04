@@ -172,8 +172,42 @@ void Server::gameUpdateLoop() {
                 game->update(); // met à jour le jeu
                 
                 if (game->isGameOver()) { // si la partie est terminée
+                    int winnerId = game->getWinner(); // récupère le winnerId avant de nettoyer
+                    int boardSize = game->getBoard()->getSize(); // récupère la taille du board
+                    
+                    std::string winnerName = "";
+                    for (int conn : lobby->connections) {
+                        auto colorIt = lobby->playerColors.find(conn);
+                        if (colorIt != lobby->playerColors.end() && colorIt->second == winnerId) {
+                            auto nameIt = lobby->playerNames.find(conn);
+                            if (nameIt != lobby->playerNames.end()) {
+                                winnerName = nameIt->second;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    BoardUpdatePacket emptyBoardPacket; // paquet de mise à jour de la grille vide
+                    memset(&emptyBoardPacket, 0, sizeof(BoardUpdatePacket));
+                    emptyBoardPacket.lobbyId = lobby->lobbyId;
+                    emptyBoardPacket.size = boardSize;
+                    emptyBoardPacket.currentTurnColorId = -1;
+                    emptyBoardPacket.turnCount = 0;
+                    emptyBoardPacket.gameOver = true;
+                    emptyBoardPacket.winnerId = -1;
+                    
+                    for (int i = 0; i < 900; ++i) {
+                        emptyBoardPacket.grid[i] = -1; // initialise toutes les cellules à -1 (vide)
+                    }
+                    
+                    lobby->broadcast(PacketType::BOARD_UPDATE, &emptyBoardPacket, sizeof(BoardUpdatePacket)); // envoie le board vide à tous les joueurs du lobby
+                    
                     GameEndPacket gameEndPacket; // paquet de fin de partie
+                    memset(&gameEndPacket, 0, sizeof(GameEndPacket));
                     gameEndPacket.lobbyId = lobby->lobbyId;
+                    gameEndPacket.winnerId = winnerId;
+                    strncpy(gameEndPacket.winnerName, winnerName.c_str(), sizeof(gameEndPacket.winnerName) - 1);
+                    gameEndPacket.winnerName[sizeof(gameEndPacket.winnerName) - 1] = '\0';
                     
                     lobby->broadcast(PacketType::GAME_END, &gameEndPacket, sizeof(GameEndPacket)); // envoie le paquet de fin de partie à tous les joueurs du lobby
                     

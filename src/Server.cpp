@@ -56,9 +56,9 @@ void Server::start() {
     
     lobbyManager.startPeriodicUpdates([this](const LobbyListPacket& packet) {
         for (auto& player : players) {
-            if (player->lobbyId == -1) { // si le joueur n'est pas assigné à un lobby
-                Packet::sendPacket(player->connection, PacketType::LOBBY_LIST, &packet, sizeof(LobbyListPacket)); // envoie la liste des lobbies au joueur
-            }
+            // if (player->lobbyId == -1) { // si le joueur n'est pas assigné à un lobby
+            Packet::sendPacket(player->connection, PacketType::LOBBY_LIST, &packet, sizeof(LobbyListPacket)); // envoie la liste des lobbies au joueur
+            // }
         }
     });
 }

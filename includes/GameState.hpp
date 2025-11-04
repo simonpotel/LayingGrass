@@ -56,6 +56,15 @@ public:
     void setRequestSent(bool sent) { requestSent = sent; }
     bool isRequestSent() const { return requestSent; }
 
+    // gestion du board
+    void updateBoard(const BoardUpdatePacket& packet);
+    const std::vector<std::vector<int>>& getBoard() const { return board; }
+    int getBoardSize() const { return boardSize; }
+    int getCurrentTurnColorId() const { return currentTurnColorId; }
+    int getTurnCount() const { return turnCount; }
+    bool isGameOver() const { return gameOver; }
+    int getWinnerId() const { return winnerId; }
+
 private:
     ClientState currentState; // état actuel du client
     std::vector<LobbyInfo> lobbies; // liste des lobbies disponibles
@@ -64,6 +73,13 @@ private:
     std::string username; // nom d'utilisateur saisi
     int selectedColorId; // identifiant de la couleur sélectionnée (-1 si aucune)
     bool requestSent; // true si la requête de connexion a été envoyée
+    
+    std::vector<std::vector<int>> board; // grille du jeu
+    int boardSize; // taille de la grille
+    int currentTurnColorId; // couleur du joueur dont c'est le tour
+    int turnCount; // nombre de tours effectués
+    bool gameOver; // true si la partie est terminée
+    int winnerId; // identifiant de la couleur du gagnant
 };
 
 #endif

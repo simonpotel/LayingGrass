@@ -1,7 +1,9 @@
 #include "Server.hpp"
+#include "Game/Game.hpp"
 #include <thread>
 #include <chrono>
 #include <cstring>
+#include <iostream>
 
 #ifdef _WIN32
     #include <winsock2.h>
@@ -53,6 +55,9 @@ void Server::start() {
     running = true; // le serveur est en cours d'exécution
     std::thread acceptThread(&Server::acceptConnections, this); // crée un thread pour accepter les connexions des clients
     acceptThread.detach(); // détache le thread pour que le serveur puisse continuer à fonctionner
+    
+    std::thread gameUpdateThread(&Server::gameUpdateLoop, this); // crée un thread pour la mise à jour des jeux
+    gameUpdateThread.detach(); // détache le thread pour que le serveur puisse continuer à fonctionner
     
     lobbyManager.startPeriodicUpdates([this](const LobbyListPacket& packet) {
         for (auto& player : players) {
@@ -156,5 +161,28 @@ void Server::clearLobbyAndRemovePlayers(int lobbyId) {
     }
 
     lobby->clear();
+}
+
+void Server::gameUpdateLoop() {
+    while (running) { // tant que le serveur est en cours d'exécution
+        const auto& lobbies = lobbyManager.getLobbies(); // obtient la liste des lobbies
+        for (const auto& lobby : lobbies) {
+            Game* game = lobby->getGame(); // obtient le jeu associé au lobby
+            if (game) { 
+                game->update(); // met à jour le jeu
+                
+                if (game->isGameOver()) { // si la partie est terminée
+                    GameEndPacket gameEndPacket; // paquet de fin de partie
+                    gameEndPacket.lobbyId = lobby->lobbyId;
+                    
+                    lobby->broadcast(PacketType::GAME_END, &gameEndPacket, sizeof(GameEndPacket)); // envoie le paquet de fin de partie à tous les joueurs du lobby
+                    
+                    clearLobbyAndRemovePlayers(lobby->lobbyId); // vide le lobby et retire les joueurs du lobby
+                }
+            }
+        }
+        
+        std::this_thread::sleep_for(std::chrono::seconds(1)); // attend 1 seconde avant de continuer la boucle (peut être inutile)
+    }
 }
 

@@ -33,6 +33,7 @@ private:
     void acceptConnections(); // accepte les connexions des clients
     void handleClient(int clientSocket); // gère les clients connectés
     void removePlayer(int clientSocket); // retire un joueur et le déconnecte du lobby
+    void gameUpdateLoop(); // boucle de mise à jour des jeux
 };
 
 #endif

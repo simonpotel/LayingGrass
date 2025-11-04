@@ -57,6 +57,14 @@ void handleGameEnd(const void* data, size_t size) {
     }
 }
 
+void handleBoardUpdate(const void* data, size_t size) {
+    const BoardUpdatePacket* packet = (const BoardUpdatePacket*)data;
+    
+    if (g_gameState) {
+        g_gameState->updateBoard(*packet);
+    }
+}
+
 int main() {
     Client client;
     GameState gameState;
@@ -77,6 +85,7 @@ int main() {
     client.getCallbackManager().registerCallback(PacketType::CONNECT_RESPONSE, handleConnectResponse);
     client.getCallbackManager().registerCallback(PacketType::GAME_START, handleGameStart);
     client.getCallbackManager().registerCallback(PacketType::GAME_END, handleGameEnd);
+    client.getCallbackManager().registerCallback(PacketType::BOARD_UPDATE, handleBoardUpdate);
 
     // démarre la réception des paquets
     client.startReceiving();

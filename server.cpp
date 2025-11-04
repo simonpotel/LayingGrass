@@ -39,8 +39,24 @@ void handleConnectRequest(Player* player, const void* data, size_t size) {
         return;
     }
 
+    // vérifie que la couleur n'est pas déjà prise dans ce lobby
+    if (lobby->hasColor(packet->colorId)) {
+        response.accepted = false;
+        strncpy(response.reason, "Color already taken in this lobby", sizeof(response.reason) - 1);
+        Packet::sendPacket(player->connection, PacketType::CONNECT_RESPONSE, &response, sizeof(response));
+        return;
+    }
+
+    // vérifie que la couleur est valide (0-8)
+    if (packet->colorId < 0 || packet->colorId >= 9) {
+        response.accepted = false;
+        strncpy(response.reason, "Invalid color", sizeof(response.reason) - 1);
+        Packet::sendPacket(player->connection, PacketType::CONNECT_RESPONSE, &response, sizeof(response));
+        return;
+    }
+
     // ajoute le joueur au lobby
-    if (lobby->addConnection(player->connection, packet->playerName)) {
+    if (lobby->addConnection(player->connection, packet->playerName, packet->colorId)) {
         strncpy(player->playerName, packet->playerName, sizeof(player->playerName) - 1);
         player->playerName[sizeof(player->playerName) - 1] = '\0';
         player->lobbyId = packet->lobbyId;

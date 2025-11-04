@@ -20,9 +20,15 @@ struct PacketHeader { // structure pour le paquet de header
     int size; // taille du paquet
 };
 
+struct PlayerInfo {
+    char playerName[256]; // nom du joueur
+    int colorId; // identifiant de la couleur (0-8)
+};
+
 struct ConnectRequestPacket {
     char playerName[256]; // nom du joueur
     int lobbyId; // identifiant du lobby choisi
+    int colorId; // identifiant de la couleur (0-8)
 };
 
 struct ConnectResponsePacket {
@@ -35,6 +41,7 @@ struct LobbyInfo { // structure pour les informations d'un lobby
     int lobbyId; // identifiant du lobby
     int playerCount; // nombre de joueurs connectés au lobby
     bool gameStarted; // true si la partie est lancée, false sinon
+    PlayerInfo players[9]; // liste des joueurs avec leurs noms et couleurs (max 9)
 };
 
 struct LobbyListPacket { // structure pour la liste des lobbies

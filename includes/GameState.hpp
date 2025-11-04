@@ -5,6 +5,10 @@
 #include <vector>
 #include <string>
 
+namespace sf {
+    class Color;
+}
+
 // états possibles pour le client
 enum class ClientState {
     WAITING_FOR_LOBBIES, // en attente de la liste des lobbies
@@ -19,6 +23,8 @@ enum class ClientState {
 // classe pour gérer l'état du client
 class GameState {
 public:
+    static const sf::Color* PLAYERS_COLORS; // tableau des 9 couleurs distinctes pour les joueurs
+
     GameState();
     ~GameState();
 
@@ -38,6 +44,10 @@ public:
     void setUsername(const std::string& name) { username = name; }
     const std::string& getUsername() const { return username; }
 
+    // gestion de la couleur sélectionnée
+    void setSelectedColor(int colorId) { selectedColorId = colorId; }
+    int getSelectedColor() const { return selectedColorId; }
+
     // gestion du lobby actuel
     void setCurrentLobby(int lobbyId) { currentLobbyId = lobbyId; }
     int getCurrentLobby() const { return currentLobbyId; }
@@ -52,6 +62,7 @@ private:
     int selectedLobbyId; // identifiant du lobby sélectionné
     int currentLobbyId; // identifiant du lobby actuel (quand connecté)
     std::string username; // nom d'utilisateur saisi
+    int selectedColorId; // identifiant de la couleur sélectionnée (-1 si aucune)
     bool requestSent; // true si la requête de connexion a été envoyée
 };
 

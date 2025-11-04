@@ -97,7 +97,7 @@ int main() {
 
         // si l'utilisateur a validé son nom, envoie la demande de connexion une seule fois
         if (gameState.getState() == ClientState::WAITING_FOR_RESPONSE && !gameState.isRequestSent()) {
-            client.sendConnectRequest(gameState.getUsername().c_str(), gameState.getSelectedLobby());
+            client.sendConnectRequest(gameState.getUsername().c_str(), gameState.getSelectedLobby(), gameState.getSelectedColor());
             gameState.setRequestSent(true); // marque la requête comme envoyée
         }
 

@@ -59,6 +59,13 @@ LobbyListPacket LobbyManager::getLobbyListPacket() const {
         packet.lobbies[i].lobbyId = lobbies[i]->lobbyId; // définit l'id du lobby
         packet.lobbies[i].playerCount = lobbies[i]->getPlayerCount(); // définit le nombre de joueurs dans le lobby
         packet.lobbies[i].gameStarted = lobbies[i]->gameStarted; // définit si la partie est lancée
+        
+        std::vector<std::pair<std::string, int>> playerColors = lobbies[i]->getPlayerColors(); // récupère les joueurs avec leurs couleurs
+        for (size_t j = 0; j < playerColors.size() && j < 9; j++) {
+            strncpy(packet.lobbies[i].players[j].playerName, playerColors[j].first.c_str(), sizeof(packet.lobbies[i].players[j].playerName) - 1);
+            packet.lobbies[i].players[j].playerName[sizeof(packet.lobbies[i].players[j].playerName) - 1] = '\0';
+            packet.lobbies[i].players[j].colorId = playerColors[j].second;
+        }
     }
     
     return packet; // retourne le paquet de liste des lobbies

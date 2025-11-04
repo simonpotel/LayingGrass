@@ -39,7 +39,7 @@ TEST(GameStart, TwoPlayersJoinLobbyReceiveGameStartPacket) {
             return;
         }
         
-        if (lobby->addConnection(player->connection, packet->playerName)) {
+        if (lobby->addConnection(player->connection, packet->playerName, packet->colorId)) {
             strncpy(player->playerName, packet->playerName, sizeof(player->playerName) - 1);
             player->playerName[sizeof(player->playerName) - 1] = '\0';
             player->lobbyId = packet->lobbyId;
@@ -132,7 +132,7 @@ TEST(GameStart, TwoPlayersJoinLobbyReceiveGameStartPacket) {
     client1.startReceiving();
     client2.startReceiving();
     
-    client1.sendConnectRequest("Player1", 1);
+    client1.sendConnectRequest("Player1", 1, 0);
     
     auto startTime = std::chrono::steady_clock::now();
     const auto maxWaitTime = std::chrono::seconds(3);
@@ -145,7 +145,7 @@ TEST(GameStart, TwoPlayersJoinLobbyReceiveGameStartPacket) {
     }
     ASSERT_TRUE(client1Connected.load());
     
-    client2.sendConnectRequest("Player2", 1);
+    client2.sendConnectRequest("Player2", 1, 1);
     
     startTime = std::chrono::steady_clock::now();
     while (!client2Connected.load()) {

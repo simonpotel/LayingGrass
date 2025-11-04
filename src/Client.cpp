@@ -2,6 +2,7 @@
 #include "Packet.hpp"
 #include <cstring>
 #include <thread>
+#include <iostream>
 
 #ifdef _WIN32
     #include <winsock2.h>
@@ -99,9 +100,9 @@ void Client::receiveLoop() {
         // appelle le callback correspondant au type de paquet via le callback manager
         auto* callback = callbackManager.getCallback(header.type);
         if (callback) {
+            std::cout << "[PACKET] Type: " << static_cast<int>(header.type) << " Size: " << header.size << std::endl;
             (*callback)(data, header.size);
         }
-
         if (data) {
             delete[] (char*)data; // on libère la mémoire allouée pour le paquet
         }

@@ -112,6 +112,7 @@ void Server::handleClient(int clientSocket) {
         // appelle le callback correspondant au type de paquet via le callback manager
         auto* callback = callbackManager.getCallback(header.type);
         if (callback) {
+            std::cout << "[PACKET] Type: " << static_cast<int>(header.type) << " Size: " << header.size << std::endl;
             (*callback)(player, data, header.size);
         }
 

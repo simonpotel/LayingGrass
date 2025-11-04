@@ -65,6 +65,8 @@ public:
     bool isGameOver() const { return gameOver; }
     int getWinnerId() const { return winnerId; }
     
+    void resetGameData();
+    
     // gestion du winnerId du GameEnd
     void setGameEndWinnerId(int winnerId) { gameEndWinnerId = winnerId; }
     int getGameEndWinnerId() const { return gameEndWinnerId; }

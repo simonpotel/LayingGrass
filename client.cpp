@@ -2,6 +2,7 @@
 #include "Render.hpp"
 #include "Packet.hpp"
 #include "GameState.hpp"
+#include "Game/TilesData.hpp"
 #include <iostream>
 #include <memory>
 #include <mutex>
@@ -78,6 +79,9 @@ void handleBoardUpdate(const void* data, size_t size) {
 }
 
 int main() {
+    // Initialise les 96 tuiles
+    TilesData::initialize();
+    
     Client client;
     auto gameState = std::make_shared<GameState>();
 

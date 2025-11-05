@@ -17,7 +17,8 @@ enum class ClientState {
     WAITING_FOR_RESPONSE, // en attente de la réponse du serveur
     IN_LOBBY, // dans un lobby
     IN_GAME, // en jeu
-    GAME_END // fin de partie
+    GAME_END, // fin de partie
+    VIEWING_TILES // visualisation de toutes les tuiles (debug)
 };
 
 // classe pour gérer l'état du client
@@ -65,6 +66,11 @@ public:
     bool isGameOver() const { return gameOver; }
     int getWinnerId() const { return winnerId; }
     
+    // gestion de la tuile actuelle
+    int getCurrentPlayerTileId() const { return currentPlayerTileId; }
+    
+    void resetGameData();
+    
     // gestion du winnerId du GameEnd
     void setGameEndWinnerId(int winnerId) { gameEndWinnerId = winnerId; }
     int getGameEndWinnerId() const { return gameEndWinnerId; }
@@ -88,6 +94,7 @@ private:
     int turnCount; // nombre de tours effectués
     bool gameOver; // true si la partie est terminée
     int winnerId; // identifiant de la couleur du gagnant
+    int currentPlayerTileId; // ID de la tuile du joueur actif (-1 si aucune)
     int gameEndWinnerId; // identifiant de la couleur du gagnant stocké pour l'affichage GameEnd
     int gameEndLobbyId; // identifiant du lobby stocké pour l'affichage GameEnd
     std::string gameEndWinnerName; // nom du joueur gagnant stocké pour l'affichage GameEnd

@@ -1,5 +1,6 @@
 #include "Render/utils/Button.hpp"
 #include "Render/utils/Text.hpp"
+#include "Render/utils/ResourcePath.hpp"
 #include <iostream>
 #include <algorithm>
 
@@ -10,8 +11,9 @@ Button::Button(float x, float y, float width, float height, const std::string& t
     
     this->text = Text::createText(text, textSize); // crée un texte à partir du texte et de la taille de texte
     
-    if (!texture.loadFromFile("button.png") && !texture.loadFromFile("../resources/button.png")) {
-        std::cerr << "Error: Cannot load button.png" << std::endl; // affiche un message d'erreur si la texture n'est pas chargée   
+    std::string buttonPath = ResourcePath::find("button.png");
+    if (!texture.loadFromFile(buttonPath)) {
+        std::cerr << "Error: Cannot load button.png (tried: " << buttonPath << ")" << std::endl; // affiche un message d'erreur si la texture n'est pas chargée   
     }
      
     sprite.setTexture(texture); // applique la texture au sprite

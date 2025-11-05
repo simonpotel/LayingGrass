@@ -1,6 +1,8 @@
 #include "Render/screens/InGame.hpp"
 #include "Render/utils/Text.hpp"
 #include "Render/utils/Board.hpp"
+#include "Render/utils/TileRenderer.hpp"
+#include "Game/TilesData.hpp"
 #include "Client.hpp"
 #include <sstream>
 #include <iostream>
@@ -43,9 +45,40 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
             Text::draw(window, "Tour de l'adversaire", 400, 50, 24);
         }
     }
+    
+    // Affiche la tuile du joueur seulement si c'est son tour
+    int currentTurnColorId = gameState.getCurrentTurnColorId();
+    int myColorId = gameState.getSelectedColor();
+    
+    if (!gameState.isGameOver() && currentTurnColorId == myColorId) {
+        int tileId = gameState.getCurrentPlayerTileId();
+        if (tileId >= 0 && tileId < TilesData::TOTAL_TILES) {
+            const Tile& tile = TilesData::getTile(tileId);
+            if (tile.isValid()) {
+                // Position de la tuile sur le côté droit
+                float tileX = 550.0f; // À droite du plateau
+                float tileY = 100.0f; // En dessous du titre
+                float tileCellSize = 20.0f; // Taille des cellules de la tuile (plus grande pour la visibilité)
+                
+                // Affiche un label avec le numéro de la tuile (debug)
+                ss.str("");
+                ss << "Votre tuile: #" << tileId;
+                Text::draw(window, ss.str(), tileX, tileY - 30, 20);
+                
+                // Dessine la tuile avec la couleur du joueur
+                TileRenderer::draw(window, tile, tileX, tileY, tileCellSize, myColorId);
+            }
+        }
+    }
 }
 
 bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Event& event) {
+    // Gestion de la touche F1 pour afficher toutes les tuiles
+    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F1) {
+        gameState.setState(ClientState::VIEWING_TILES);
+        return false;
+    }
+    
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
         if (gameState.isGameOver()) { // si la partie est terminée
             return false; // on ne fait rien quand un joueur clique sur le board 

@@ -2,6 +2,7 @@
 #include "Render.hpp"
 #include "Packet.hpp"
 #include "GameState.hpp"
+#include "Game/TilesData.hpp"
 #include <iostream>
 
 // variables globales pour accéder au client et gamestate dans les callbacks
@@ -70,6 +71,9 @@ void handleBoardUpdate(const void* data, size_t size) {
 }
 
 int main() {
+    // Initialise les 96 tuiles
+    TilesData::initialize();
+    
     Client client;
     GameState gameState;
 

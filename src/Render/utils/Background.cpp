@@ -1,11 +1,13 @@
 #include "Render/utils/Background.hpp"
+#include "Render/utils/ResourcePath.hpp"
 #include <iostream>
 #include <algorithm>
 
 std::unique_ptr<sf::Texture> Background::load(const std::string& filename) {
     auto texture = std::make_unique<sf::Texture>(); // crée une texture
-    if (!texture->loadFromFile(filename) && !texture->loadFromFile("../resources/" + filename)) {
-        std::cerr << "Error: Cannot load background " << filename << std::endl; // affiche un message d'erreur si la texture n'est pas chargée
+    std::string resourcePath = ResourcePath::find(filename);
+    if (!texture->loadFromFile(resourcePath)) {
+        std::cerr << "Error: Cannot load background " << filename << " (tried: " << resourcePath << ")" << std::endl; // affiche un message d'erreur si la texture n'est pas chargée
         return nullptr;
     }
     return texture; // retourne la texture

@@ -47,6 +47,10 @@ list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/Render.cpp")
 list(REMOVE_ITEM SOURCES "${CMAKE_SOURCE_DIR}/src/GameState.cpp")
 file(GLOB_RECURSE RENDER_SOURCES "src/Render/*.cpp")
 list(REMOVE_ITEM SOURCES ${RENDER_SOURCES})
+# S'assure que ResourcePath.cpp, TileRenderer.cpp et TileViewer.cpp sont inclus explicitement
+list(APPEND RENDER_SOURCES "${CMAKE_SOURCE_DIR}/src/Render/utils/ResourcePath.cpp")
+list(APPEND RENDER_SOURCES "${CMAKE_SOURCE_DIR}/src/Render/utils/TileRenderer.cpp")
+list(APPEND RENDER_SOURCES "${CMAKE_SOURCE_DIR}/src/Render/screens/TileViewer.cpp")
 set(CLIENT_SOURCES ${SOURCES} "${CMAKE_SOURCE_DIR}/src/Render.cpp" "${CMAKE_SOURCE_DIR}/src/GameState.cpp" ${RENDER_SOURCES})
 
 function(copy_sfml_dlls target)

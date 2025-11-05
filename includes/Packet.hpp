@@ -75,6 +75,7 @@ struct BoardUpdatePacket {
     int turnCount; // nombre de tours effectués
     bool gameOver; // true si la partie est terminée
     int winnerId; // identifiant de la couleur du gagnant (-1 si pas de gagnant)
+    int currentPlayerTileId; // ID de la tuile du joueur dont c'est le tour (-1 si aucune tuile)
 };
 
 namespace Packet {

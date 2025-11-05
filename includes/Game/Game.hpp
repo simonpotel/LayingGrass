@@ -1,9 +1,11 @@
 #pragma once
 #include "Game/Board.hpp"
+#include "Game/TilesData.hpp"
 #include "Lobby.hpp"
 #include <vector>
 #include <memory>
 #include <random>
+#include <unordered_map>
 
 class Game {
 public:
@@ -19,11 +21,22 @@ public:
     
     void broadcastBoardUpdate(); // envoie le paquet de mise à jour de la grille à tous les joueurs du lobby
     
+    // Gestion des tuiles
+    int getCurrentPlayerTileId(int connection) const; // retourne l'ID de la tuile actuelle du joueur (-1 si aucune)
+    bool isFirstTurnForPlayer(int connection) const; // vérifie si c'est le premier tour du joueur
+    
+    // Méthodes utilitaires pour le calcul du gagnant
+    int getPlayerTerritoryCount(int playerId) const; // compte le nombre de cellules d'un joueur
+    int getPlayerLargestSquare(int playerId) const; // trouve le plus grand carré d'un joueur
+    
 private:
     void initializePlayers(); // initialise les joueurs du jeu
-    void nextTurn(); // passe au joueur suivant
+    void nextTurn(); // passe au joueur suivant et distribue une nouvelle tuile
     void endGame(); // termine la partie
     int getPlayerColorId(int connection) const; // retourne l'identifiant de la couleur du joueur
+    void giveTileToPlayer(int connection); // distribue une tuile au joueur (1x1 au premier tour, aléatoire sinon)
+    bool canPlaceTile(int connection, int tileId, int anchorRow, int anchorCol) const; // Vérifie si une tuile peut être placée
+    bool placeTile(int connection, int tileId, int anchorRow, int anchorCol); // Place une tuile sur le plateau
     
     int lobbyId; // identifiant du lobby
     Lobby* lobby; // lobby associé au jeu
@@ -33,8 +46,11 @@ private:
     int currentTurnIndex; // index du joueur dont c'est le tour
     int turnCount; // nombre de tours effectués
     int winnerId; // identifiant de la couleur du gagnant
-
-    //temp 
-    std::mt19937 rng; // générateur de nombres aléatoires (temporaire à retirer quand on aura un système de victoire définir d'un joueur )
+    
+    // Gestion des tuiles : map connection -> tileId (-1 si aucune tuile)
+    std::unordered_map<int, int> playerTiles; // tuile actuelle de chaque joueur
+    std::unordered_map<int, int> playerTurnsPlayed; // nombre de tours joués par chaque joueur
+    
+    std::mt19937 rng; // générateur de nombres aléatoires
 };
 

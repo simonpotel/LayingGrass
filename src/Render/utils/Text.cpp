@@ -1,4 +1,5 @@
 #include "Render/utils/Text.hpp"
+#include "Render/utils/ResourcePath.hpp"
 
 namespace Text {
 
@@ -7,8 +8,9 @@ void draw(sf::RenderWindow& window, const std::string& text, float x, float y, u
     static bool loaded = false;
 
     // charge la police une seule fois
-    if (!loaded && (font.loadFromFile("BoldPixels.ttf") || font.loadFromFile("../resources/BoldPixels.ttf"))) {
-        loaded = true;
+    if (!loaded) {
+        std::string fontPath = ResourcePath::find("BoldPixels.ttf");
+        loaded = font.loadFromFile(fontPath);
     }
 
     // affiche le texte ou un carré rouge si la police n'est pas chargée
@@ -43,7 +45,8 @@ sf::Text createText(const std::string& text, unsigned int size) {
     static bool loaded = false;
     
     if (!loaded) {
-        loaded = font.loadFromFile("BoldPixels.ttf") || font.loadFromFile("../resources/BoldPixels.ttf");
+        std::string fontPath = ResourcePath::find("BoldPixels.ttf");
+        loaded = font.loadFromFile(fontPath);
     }
     
     sf::Text sfText;

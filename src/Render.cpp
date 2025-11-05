@@ -7,6 +7,7 @@
 #include "Render/screens/InLobby.hpp"
 #include "Render/screens/InGame.hpp"
 #include "Render/screens/GameEnd.hpp"
+#include "Render/screens/TileViewer.hpp"
 
 std::unique_ptr<sf::RenderWindow> Render::createWindow() {
     return std::make_unique<sf::RenderWindow>(sf::VideoMode(800, 600), "LayingGrass Client");
@@ -28,6 +29,8 @@ std::unique_ptr<Render> Render::createScreen(ClientState state) {
             return std::make_unique<InGame>();
         case ClientState::GAME_END:
             return std::make_unique<GameEnd>();
+        case ClientState::VIEWING_TILES:
+            return std::make_unique<TileViewer>();
         default:
             return std::make_unique<WaitingForLobbies>();
     }

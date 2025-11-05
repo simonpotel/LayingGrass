@@ -29,6 +29,7 @@ GameState::GameState()
       turnCount(0),
       gameOver(false),
       winnerId(-1),
+      currentPlayerTileId(-1),
       gameEndWinnerId(-1),
       gameEndLobbyId(-1) {
     board.resize(20);
@@ -67,6 +68,7 @@ void GameState::updateBoard(const BoardUpdatePacket& packet) {
     turnCount = packet.turnCount;
     gameOver = packet.gameOver;
     winnerId = packet.winnerId;
+    currentPlayerTileId = packet.currentPlayerTileId;
 }
 
 void GameState::resetGameData() {
@@ -79,4 +81,5 @@ void GameState::resetGameData() {
     turnCount = 0;
     gameOver = false;
     winnerId = -1;
+    currentPlayerTileId = -1;
 }

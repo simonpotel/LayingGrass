@@ -1,6 +1,5 @@
 #include "Render/utils/Button.hpp"
 #include "Render/utils/Text.hpp"
-#include "Render/utils/ResourcePath.hpp"
 #include <iostream>
 #include <algorithm>
 
@@ -9,11 +8,10 @@ static const float BUTTON_SCALE_MULTIPLIER = 1.2f;
 Button::Button(float x, float y, float width, float height, const std::string& text, unsigned int textSize)
     : Element(x, y, width, height), enabled(true) {
     
-    this->text = Text::createText(text, textSize); // crée un texte à partir du texte et de la taille de texte
+    this->text = Text::createText(text, textSize);
     
-    std::string buttonPath = ResourcePath::find("button.png");
-    if (!texture.loadFromFile(buttonPath)) {
-        std::cerr << "Error: Cannot load button.png (tried: " << buttonPath << ")" << std::endl; // affiche un message d'erreur si la texture n'est pas chargée   
+    if (!texture.loadFromFile("button.png")) {
+        std::cerr << "Error: Cannot load button.png" << std::endl;
     }
      
     sprite.setTexture(texture); // applique la texture au sprite

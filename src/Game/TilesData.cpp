@@ -48,266 +48,240 @@ namespace TilesData {
         // Tuile 10: angle droit
         allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 0}}));
 
-        // escaliers
+        // Tuile 11: escaliers
         allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 1}, {-1, 2}, {-2, 2}}));
         
-        // 2
+        // Tuile 12: 2
         allTiles.push_back(Tile({{0, 0}, {0, 1}}));
         
-        // crochet a l'envers 
+        // Tuile 13: crochet a l'envers 
         allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 0}, {-2, 0}, {-3, 0}, {-3, 1}, {-4, 1}}));
         
-        // L à l'envers
+        // Tuile 14: L à l'envers
         allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-3, 0}, {-4, 0}, {-4, 1}, {-4, 2}}));
         
-        // 
+        // Tuile 15: 
         allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 1}, {-1, 2}, {-1, 3}, {-2, 3}, {-2, 4}, {-3, 3}, {-4, 3}}));
         
         
-        //
+        // Tuile 16: 
         allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, 1}, {-2, 1}, {-2, 2}, {-3, 2}}));
         
-        // 
+        // Tuile 17: 
         allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 0}, {-1, 1}, {-2, 1}, {-1, 2}}));
         
-        // 3
-        allTiles.push_back(Tile({{0, 1}, {1, 0}, {1, 1}, {1, 2}, {2, 1}}));
+        // Tuile 18: 
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-2, 1}, {-3, 0}}));
         
-        // Pentomino Y
-        allTiles.push_back(Tile({{0, 0}, {1, 0}, {2, 0}, {2, 1}, {3, 0}}));
+        // Tuile 19: 
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {0, 1}, {-1, 1}, {-2, 1}, {-2, 2}}));
         
-        // Pentomino Z
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 1}, {2, 1}, {2, 2}}));
+        // Tuile 20: 
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {-1, 0}, {-1, 1}, {-2, 1}}));
         
-        // Pentomino F
-        allTiles.push_back(Tile({{0, 1}, {0, 2}, {1, 0}, {1, 1}, {2, 1}}));
+        // Tuile 21: 
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, 1}, {-1, 2}, {-2, 1}, {-3, 1}}));
         
-        // Hexomino I (ligne de 6)
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {0, 3}, {0, 4}, {0, 5}}));
+        // Tuile 22: 
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 0}, {-1, 1}, {-2, 0}, {-2, 1}}));
         
-        // Hexomino rectangle 2x3
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {1, 0}, {1, 1}, {1, 2}}));
+        // Tuile 23: T
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-3, 0}, {-3, -1}, {-3, 1}}));
         
-        // Hexomino rectangle 3x2
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 0}, {1, 1}, {2, 0}, {2, 1}}));
+        // Tuile 24: escaliers descendants droite
+        allTiles.push_back(Tile({{0, 0}, {1, 0}, {1, 1}, {2, 1}, {2, 2}, {3, 2}, {3, 3}}));
         
-        // Tuile 25: Pentomino N (première forme)
-        allTiles.push_back(Tile({{0, 0}, {1, 0}, {1, 1}, {2, 1}, {2, 2}}));
+        // Tuile 25: 5
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {0, 3}, {0, 4}}));
         
-        // Tuile 26: Pentomino N (forme miroir)
-        allTiles.push_back(Tile({{0, 1}, {0, 2}, {1, 0}, {1, 1}, {2, 0}}));
+        // Tuile 26:
+        allTiles.push_back(Tile({{0, 0}, {1, 0}, {1, 1}, {1, 2}, {2, 2}, {3, 2}}));
         
-        // Hexominoes (6 blocs) - formes variées
-        // Tuile 27: Hexomino ligne verticale
-        allTiles.push_back(Tile({{0, 0}, {1, 0}, {2, 0}, {3, 0}, {4, 0}, {5, 0}}));
+        // Tuile 27:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, 1}, {-2, 0}, {-3, 0}, {-3, 1}, {-4, 0}}));
         
-        // Tuile 28: Hexomino rectangle 2x3
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {1, 0}, {1, 1}, {1, 2}}));
+        // Tuile 28
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, 1}, {-2, 0}, {-2, 1}, {-3, 0}}));
         
-        // Tuile 29: Hexomino rectangle 3x2
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 0}, {1, 1}, {2, 0}, {2, 1}}));
+        // Tuile 29:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, 1}, {-1, 2}, {0, 2}, {-2, 1}, {-3, 1}, {-4, 1}}));
         
-        // Tuile 30: Hexomino L (grand)
-        allTiles.push_back(Tile({{0, 0}, {1, 0}, {2, 0}, {3, 0}, {4, 0}, {4, 1}}));
+        // Tuile 30:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-1, 1}, {-1, 2}, {0, 2}, {0, 3}}));
         
-        // Tuile 31: Hexomino T (grand)
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {1, 1}, {2, 1}, {3, 1}}));
+        // Tuile 31:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-2, 1}, {-3, 1}, {-4, 1}}));
         
-        // Tuile 32: Hexomino croix
-        allTiles.push_back(Tile({{0, 1}, {1, 0}, {1, 1}, {1, 2}, {2, 1}, {3, 1}}));
+        // Tuile 32:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, 1}, {-2, 1}, {-2, 2}, {-2, 3}, {-3, 1}, {-4, 1}, {-4, 0}}));
+    
+        // Tuile 33: 
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, 1}, {-2, 0}, {-3, 0}}));
         
-        // Tuile 33: Hexomino escalier
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 1}, {1, 2}, {2, 2}, {2, 3}}));
+        // Tuile 34:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {0, 1}, {0, 2}, {0, 3}, {-1, 3}}));
         
-        // Tuile 34: Hexomino zigzag
-        allTiles.push_back(Tile({{0, 1}, {0, 2}, {1, 0}, {1, 1}, {2, 0}, {3, 0}}));
+        // Tuile 35:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {0, 1}, {0, 2}, {0, 3}, {0, 4}, {-1, 4}, {-2, 4}, {-2, 3}}));
         
-        // Tuile 35: Hexomino U (grand)
-        allTiles.push_back(Tile({{0, 0}, {0, 2}, {1, 0}, {1, 1}, {1, 2}, {2, 0}, {2, 2}}));
+        // Tuile 36:
+        allTiles.push_back(Tile({{0, 0}, {1, 0}, {2, 0}, {2, 1}, {3, 1}, {3, 2}, {3, 3}}));
         
-        // Tuile 36: Hexomino rectangle avec extension
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {1, 0}, {1, 1}, {2, 1}}));
+        // Tuile 37: 
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, 1}, {-2, 0}, {-2, -1}, {-3, 0}, {-3, 1}, {-4, 0}, {-4, -1}}));
+          
+        // Tuile 38: 
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 0}, {-1, 1}, {-2, 0}}));
         
-        // Tuile 37: Hexomino L avec extension
-        allTiles.push_back(Tile({{0, 0}, {1, 0}, {2, 0}, {2, 1}, {3, 1}, {3, 2}}));
+        // Tuile 39:
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {0, 3}, {-1, 1}, {-2, 1}}));
         
-        // Tuile 38: Hexomino double escalier
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 1}, {2, 1}, {2, 2}, {3, 2}}));
+        // Tuile 40:carré 
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 0}, {-1, 1}}));
         
-        // Tuile 39: Hexomino forme complexe
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 1}, {1, 2}, {2, 0}, {2, 1}}));
+        // Tuile 41: 
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, 1}, {-2, 0}, {-2, 1}, {-3, 1}}));
         
-        // Tuile 40: Hexomino carré avec deux extensions
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 0}, {1, 1}, {2, 0}, {2, 2}}));
+        // Tuile 42: J
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 1}, {-2, 0}, {-2, 1}, {-2, 2}}));
         
-        // Heptominoes (7 blocs)
-        // Tuile 41: Heptomino ligne
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {0, 3}, {0, 4}, {0, 5}, {0, 6}}));
+        // Tuile 43: 4
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {0, 3}}));
         
-        // Tuile 42: Heptomino rectangle 2x4 (avec un manquant)
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {0, 3}, {1, 0}, {1, 1}, {1, 3}}));
+        // Tuile 44:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {0, 1}, {0, 2}, {0, 3}}));
         
-        // Tuile 43: Heptomino L (grand)
-        allTiles.push_back(Tile({{0, 0}, {1, 0}, {2, 0}, {3, 0}, {4, 0}, {5, 0}, {5, 1}}));
+        // Tuile 45:
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {-1, 0}, {-1, -1}, {-2, 0}, {-2, 1}}));
         
-        // Tuile 44: Heptomino T (grand)
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {1, 1}, {2, 1}, {3, 1}, {4, 1}}));
+        // Tuile 46:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-2, 1}, {-3, 1}}));
         
-        // Tuile 45: Heptomino croix
-        allTiles.push_back(Tile({{0, 1}, {1, 0}, {1, 1}, {1, 2}, {2, 1}, {3, 1}, {4, 1}}));
+        // Tuile 47:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {0, 1}, {0, 2}}));
         
-        // Tuile 46: Heptomino U (grand)
-        allTiles.push_back(Tile({{0, 0}, {0, 2}, {1, 0}, {1, 1}, {1, 2}, {2, 0}, {2, 2}}));
+        // Tuile 48:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-3, 0}, {-3, 1}, {-4, 0}}));
         
-        // Tuile 47: Heptomino escalier
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 1}, {1, 2}, {2, 2}, {2, 3}, {3, 3}}));
+        // Tuile 49:
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {-1, 2}, {-2, 2}, {-3, 2}, {-4, 2}, {-4, 3}, {-4, 4}}));
         
-        // Tuile 48: Heptomino rectangle 3x3 (avec 2 manquants)
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {1, 0}, {1, 2}, {2, 0}, {2, 1}}));
+        // Tuile 50:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, 1}, {-2, 0}, {-3, 0}, {-3, 1}, {-4, 1}, {-5, 1}}));
         
-        // Tuile 49: Heptomino forme complexe
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 1}, {1, 2}, {2, 0}, {2, 1}, {2, 2}}));
+        // Tuile 51:
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 1}, {2, 1}, {2, 2}, {2, 3}, {3, 3}}));
         
-        // Tuile 50: Heptomino L avec double extension
-        allTiles.push_back(Tile({{0, 0}, {1, 0}, {2, 0}, {2, 1}, {3, 1}, {3, 2}, {4, 2}}));
+        // Tuile 52: 
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-2, -1}, {-2, 1}, {-3, 0}, {-4, 0}}));
         
-        // Tuiles de 8 blocs (Octominoes)
-        // Tuile 51: Octomino ligne
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {0, 3}, {0, 4}, {0, 5}, {0, 6}, {0, 7}}));
+        // Tuile 53:
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {-1, 2}, {-2, 2}}));
         
-        // Tuile 52: Octomino rectangle 2x4
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {0, 3}, {1, 0}, {1, 1}, {1, 2}, {1, 3}}));
+        // Tuile 54: I en 6 
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-3, 0}, {-4, 0}, {-5, 0}}));
         
-        // Tuile 53: Octomino rectangle 4x2
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 0}, {1, 1}, {2, 0}, {2, 1}, {3, 0}, {3, 1}}));
+        // Tuile 55: Y
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 1}, {-2, 1}, {-2, 0}, {-2, 2}, {-3, 0}, {-3, 2}}));
         
-        // Tuile 54: Octomino L (très grand)
-        allTiles.push_back(Tile({{0, 0}, {1, 0}, {2, 0}, {3, 0}, {4, 0}, {5, 0}, {6, 0}, {6, 1}}));
+        // Tuile 56: 
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, 1}, {-1, 2}, {-2, 0}, {-2, -1}, {-2, 1}, {-3, 1}}));
         
-        // Tuile 55: Octomino T (grand)
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {1, 1}, {2, 1}, {3, 1}, {4, 1}, {5, 1}}));
+        // Tuile 57:
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {-1, 1}, {-2, 1}, {-3, 1}, {-3, 2}}));
         
-        // Tuile 56: Octomino carré 3x3 (avec 1 manquant)
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {1, 0}, {1, 1}, {1, 2}, {2, 0}, {2, 1}}));
-        
-        // Tuile 57: Octomino U (grand)
-        allTiles.push_back(Tile({{0, 0}, {0, 2}, {1, 0}, {1, 1}, {1, 2}, {2, 0}, {2, 2}, {3, 0}}));
-        
-        // Tuile 58: Octomino forme complexe
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 1}, {1, 2}, {2, 0}, {2, 1}, {2, 2}, {3, 1}}));
+        // Tuile 58:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-2, 1}, {-3, 0}, {-4, 0}}));
         
         // Tuile 59: Octomino escalier
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 1}, {1, 2}, {2, 2}, {2, 3}, {3, 3}, {3, 4}}));
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 1}, {-2, 1}, {-3, 1}, {-2, 0}, {0, 2}, {0, 3}, {-1, 3}}));
         
-        // Tuile 60: Octomino zigzag
-        allTiles.push_back(Tile({{0, 1}, {0, 2}, {1, 0}, {1, 1}, {2, 1}, {2, 2}, {3, 0}, {3, 1}}));
+        // Tuile 60: 
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 0}, {-2, 0}, {-2, 1}, {-3, 1}, {-3, 2}, {-4, 2}}));
         
-        // Tuiles de 9 blocs (Enneominoes)
-        // Tuile 61: Enneomino ligne
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {0, 3}, {0, 4}, {0, 5}, {0, 6}, {0, 7}, {0, 8}}));
+        // Tuile 61:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, 1}, {-2, 1}, {-3, 1}, {-4, 1}, {-5, 1}, {-5, 2}}));
         
-        // Tuile 62: Enneomino rectangle 3x3
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {1, 0}, {1, 1}, {1, 2}, {2, 0}, {2, 1}, {2, 2}}));
+        // Tuile 62:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {0, 1}, {0, 2}, {-1, 2}, {0, 3}}));
         
-        // Tuile 63: Enneomino L (très grand)
-        allTiles.push_back(Tile({{0, 0}, {1, 0}, {2, 0}, {3, 0}, {4, 0}, {5, 0}, {6, 0}, {7, 0}, {7, 1}}));
+        // Tuile 63:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-3, 0}, {-3, -1}, {0, 1}, {0, 2}, {-1, 2}, {-2, 2}}));
         
-        // Tuile 64: Enneomino T (grand)
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {1, 1}, {2, 1}, {3, 1}, {4, 1}, {5, 1}, {6, 1}}));
+        // Tuile 64:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-2, -1}, {-3, -1}, {-4, -1}, {-2, 1}, {-3, 1}, {-2, 2}}));
         
-        // Tuile 65: Enneomino rectangle 3x3 (avec extensions)
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {1, 0}, {1, 1}, {1, 2}, {2, 0}, {2, 1}, {3, 0}}));
+        // Tuile 65:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-3, 0}, {-4, 0}, {-5, 0}, {-6, 0}, {-6, 1}}));
         
-        // Tuile 66: Enneomino forme complexe
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 1}, {1, 2}, {2, 0}, {2, 1}, {2, 2}, {3, 1}, {3, 2}}));
+        // Tuile 66: 
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-2, 1}, {-3, 1}, {-2, 2}}));
+
+        // Tuile 67: 
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {0, 1}, {0, 2}, {-1, 2}, {-2, 2}}));
         
-        // Tuiles de 10+ blocs (variantes)
-        // Tuile 67: Décomino ligne (10 blocs)
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {0, 3}, {0, 4}, {0, 5}, {0, 6}, {0, 7}, {0, 8}, {0, 9}}));
+        // Tuile 68:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, 1}, {-2, 1}, {-1, 2}, {0, 2}}));
         
-        // Tuile 68: Rectangle 2x5
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {0, 3}, {0, 4}, {1, 0}, {1, 1}, {1, 2}, {1, 3}, {1, 4}}));
+        // Tuile 69: +
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-2, -1}, {-2, -2}, {-2, 1}, {-2, 2}, {-3, 0}, {-4, 0}}));
         
-        // Tuile 69: Rectangle 5x2
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 0}, {1, 1}, {2, 0}, {2, 1}, {3, 0}, {3, 1}, {4, 0}, {4, 1}}));
+        // Tuile 70:
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 1}, {-1, 2}, {-2, 2}, {-3, 2}, {-4, 2}, {-4, 3}, {-5, 3}}));
         
-        // Tuile 70: L avec extensions multiples
-        allTiles.push_back(Tile({{0, 0}, {1, 0}, {2, 0}, {3, 0}, {4, 0}, {5, 0}, {5, 1}, {5, 2}, {6, 2}, {7, 2}}));
+        // Tuile 71: E
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 0}, {-2, 0}, {-2, 1}, {-3, 0}, {-4, 0}, {-4, 1}}));
         
-        // Tuile 71: T avec extensions
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {1, 1}, {2, 1}, {3, 1}, {4, 1}, {5, 1}, {6, 1}, {7, 1}}));
+        // Tuile 72:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, -1}, {-1, 1}, {-1, 2}, {-2, 0}, {-3, 0}, {-4, 0}}));
         
-        // Tuile 72: Forme complexe avec creux
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {1, 0}, {1, 2}, {2, 0}, {2, 1}, {2, 2}, {3, 0}, {3, 1}}));
+        // Tuile 73:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-3, 0}, {-3, 1}, {-4, 1}}));
         
-        // Tuile 73: Escalier long
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 1}, {1, 2}, {2, 2}, {2, 3}, {3, 3}, {3, 4}, {4, 4}, {4, 5}}));
+        // Tuile 74:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, 1}, {-2, 1}, {-3, 1}, {-3, 2}}));
         
-        // Tuile 74: Zigzag long
-        allTiles.push_back(Tile({{0, 1}, {0, 2}, {1, 0}, {1, 1}, {2, 1}, {2, 2}, {3, 0}, {3, 1}, {4, 1}, {4, 2}}));
+        // Tuile 75: 
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-2, 1}, {-3, 0}, {-3, -1}, {-4, 0}, {-5, 0}, {-5, 1}}));
         
-        // Tuile 75: Rectangle 3x4 (avec 2 manquants)
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {0, 3}, {1, 0}, {1, 1}, {1, 3}, {2, 0}, {2, 1}, {2, 2}}));
+        // Tuile 76:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-3, 0}, {-3, 1}, {-4, 0}, {-4, -1}, {-5, 0}, {-5, -1}}));
         
-        // Tuile 76: Forme en spirale
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 1}, {1, 2}, {2, 0}, {2, 1}, {2, 2}, {3, 0}, {3, 1}, {4, 1}}));
+        // Tuile 77:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, -1}, {-2, 0}, {-2, 1}, {-3, 0}}));
         
-        // Tuile 77: Croix avec extensions
-        allTiles.push_back(Tile({{0, 1}, {1, 0}, {1, 1}, {1, 2}, {2, 1}, {3, 1}, {4, 1}, {5, 1}, {6, 0}, {6, 2}}));
+        // Tuile 78:
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 0}, {-1, 1}, {0, 2}, {0, 3}}));
         
-        // Tuile 78: U avec extensions
-        allTiles.push_back(Tile({{0, 0}, {0, 2}, {1, 0}, {1, 1}, {1, 2}, {2, 0}, {2, 2}, {3, 0}, {3, 1}, {4, 0}}));
+        // Tuile 79:
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 0}, {-2, 0}, {-2, 1}, {-2, 2}, {-3, 2}, {-3, 3}}));
         
-        // Tuile 79: Forme complexe mixte
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 1}, {1, 2}, {2, 0}, {2, 1}, {2, 2}, {3, 1}, {3, 2}, {4, 2}}));
+        // Tuile 80:
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 1}, {-2, 1}, {-3, 1}, {-3, 2}}));
         
-        // Tuile 80: Rectangle avec protubérances
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {1, 0}, {1, 1}, {1, 2}, {2, 0}, {2, 1}, {3, 1}, {4, 1}}));
+        // Tuile 81:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-3, 0}, {-1, 1}, {-1, -1}}));
         
-        // Tuile 81: L avec double branche
-        allTiles.push_back(Tile({{0, 0}, {1, 0}, {2, 0}, {3, 0}, {3, 1}, {4, 1}, {4, 2}, {5, 2}, {5, 3}, {6, 3}}));
+        // Tuile 82:
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 0}, {-2, 0}, {-3, 0}, {-3, 1}, {-3, 2}, {-2, 2}}));
         
-        // Tuile 82: T avec double branche
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {1, 1}, {2, 1}, {3, 1}, {4, 1}, {4, 0}, {4, 2}, {5, 1}}));
+        // Tuile 83:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, 1}, {-2, 1}, {-2, 2}, {-3, 1}}));
         
-        // Tuile 83: Forme en H
-        allTiles.push_back(Tile({{0, 0}, {1, 0}, {2, 0}, {1, 1}, {2, 1}, {3, 1}, {0, 2}, {1, 2}, {2, 2}, {3, 2}}));
+        // Tuile 84: escaliers pleins
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {-1, 0}, {-1, 1}, {-2, 0}}));
         
-        // Tuile 84: Forme en X (grande)
-        allTiles.push_back(Tile({{0, 1}, {1, 0}, {1, 1}, {1, 2}, {2, 1}, {3, 0}, {3, 1}, {3, 2}, {4, 1}, {5, 1}}));
+        // Tuile 85: 
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 0}, {-2, 0}, {-3, 0}}));
         
-        // Tuile 85: Rectangle 4x3 (avec 2 manquants)
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {1, 0}, {1, 1}, {1, 2}, {2, 0}, {2, 2}, {3, 0}, {3, 1}}));
+        // Tuile 86:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-1, 1}, {-1, 2}, {-2, 1}, {-1, 3}}));
         
-        // Tuile 86: Forme complexe avec angles
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 1}, {1, 2}, {2, 0}, {2, 1}, {2, 2}, {3, 1}, {3, 2}, {4, 0}, {4, 1}}));
+        // Tuile 87:
+        allTiles.push_back(Tile({{0, 0}, {-1, 0}, {-2, 0}, {-2, 1}, {-3, 1}, {-3, 2}}));
         
-        // Tuile 87: Zigzag complexe
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 1}, {1, 2}, {2, 0}, {2, 1}, {3, 1}, {3, 2}, {4, 0}, {4, 1}, {5, 1}}));
-        
-        // Tuile 88: L avec triple extension
-        allTiles.push_back(Tile({{0, 0}, {1, 0}, {2, 0}, {3, 0}, {4, 0}, {4, 1}, {5, 1}, {5, 2}, {6, 2}, {6, 3}, {7, 3}}));
-        
-        // Tuile 89: Rectangle presque complet
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {0, 3}, {1, 0}, {1, 1}, {1, 3}, {2, 0}, {2, 1}, {2, 2}, {2, 3}}));
-        
-        // Tuile 90: Forme en étoile
-        allTiles.push_back(Tile({{0, 1}, {1, 0}, {1, 1}, {1, 2}, {2, 1}, {3, 0}, {3, 1}, {3, 2}, {4, 1}, {5, 0}, {5, 2}}));
-        
-        // Tuile 91: Spiral complexe
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 1}, {1, 2}, {2, 0}, {2, 1}, {2, 2}, {3, 0}, {3, 1}, {4, 1}, {4, 2}, {5, 2}}));
-        
-        // Tuile 92: Rectangle 3x4 (avec 1 manquant)
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {0, 3}, {1, 0}, {1, 1}, {1, 2}, {1, 3}, {2, 0}, {2, 1}, {2, 3}}));
-        
-        // Tuile 93: Forme complexe avec plusieurs angles
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {1, 1}, {1, 2}, {2, 0}, {2, 1}, {2, 2}, {3, 1}, {3, 2}, {4, 0}, {4, 1}, {5, 1}}));
-        
-        // Tuile 94: Grande forme L
-        allTiles.push_back(Tile({{0, 0}, {1, 0}, {2, 0}, {3, 0}, {4, 0}, {5, 0}, {6, 0}, {6, 1}, {6, 2}, {7, 2}, {7, 3}, {8, 3}}));
-        
-        // Tuile 95: Dernière tuile - forme complexe finale
-        allTiles.push_back(Tile({{0, 0}, {0, 1}, {0, 2}, {1, 0}, {1, 2}, {2, 0}, {2, 1}, {2, 2}, {3, 1}, {4, 0}, {4, 1}, {5, 1}}));
+        // Tuile 88:
+        allTiles.push_back(Tile({{0, 0}, {0, 1}, {-1, 0}, {-2, 0}, {-2, 1}, {-3, 1}, {-3, 2}}));
         
         initialized = true;
     }

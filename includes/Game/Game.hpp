@@ -1,6 +1,6 @@
 #pragma once
 #include "Game/Board.hpp"
-#include "Game/TilesData.hpp"
+#include "Game/Tile.hpp"
 #include "Lobby.hpp"
 #include <vector>
 #include <memory>

@@ -12,13 +12,13 @@ extern Client* g_client;
 void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     int currentLobbyId = gameState.getCurrentLobby();
     const auto& board = gameState.getBoard(); // récupère la grille du jeu
-    int boardSize = gameState.getBoardSize(); // récupère la taille de la grille
+    int boardSize = board.getSize(); // récupère la taille de la grille
     
     float boardX = 50.0f; // définit la position x du board
     float boardY = 50.0f; // définit la position y du board
     float cellSize = 15.0f; // définit la taille des cellules
     
-    Board::draw(window, board, boardSize, boardX, boardY, cellSize); // dessine la grille
+    BoardRenderer::draw(window, board, boardX, boardY, cellSize); // dessine la grille
     
     std::stringstream ss;
     ss << "Lobby #" << currentLobbyId; // définit le nom du lobby
@@ -91,10 +91,10 @@ bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Eve
         float boardX = 50.0f; // définit la position x du board
         float boardY = 50.0f; // définit la position y du board
         float cellSize = 15.0f; // définit la taille des cellules
-        int boardSize = gameState.getBoardSize(); // récupère la taille de la grille
+        int boardSize = gameState.getBoard().getSize(); // récupère la taille de la grille
         
         int row, col;
-        if (Board::handleClick(event.mouseButton.x, event.mouseButton.y, boardX, boardY, cellSize, boardSize, row, col)) { // si le joueur clique sur le board
+        if (BoardRenderer::handleClick(event.mouseButton.x, event.mouseButton.y, boardX, boardY, cellSize, boardSize, row, col)) { // si le joueur clique sur le board
             if (g_client) {
                 g_client->sendCellClick(gameState.getCurrentLobby(), row, col); // envoie le clic au serveur
             }

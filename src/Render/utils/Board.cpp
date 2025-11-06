@@ -1,8 +1,9 @@
 #include "Render/utils/Board.hpp"
 #include "GameState.hpp"
 
-namespace Board {
-    void draw(sf::RenderWindow& window, const std::vector<std::vector<int>>& grid, int size, float x, float y, float cellSize) {
+namespace BoardRenderer {
+    void draw(sf::RenderWindow& window, const Board& board, float x, float y, float cellSize) {
+        int size = board.getSize();
         for (int i = 0; i < size; ++i) { // parcourt la grille
             for (int j = 0; j < size; ++j) {
                 float cellX = x + j * cellSize; // définit la position x de la cellule
@@ -11,7 +12,7 @@ namespace Board {
                 sf::RectangleShape cell(sf::Vector2f(cellSize - 2, cellSize - 2));
                 cell.setPosition(cellX + 1, cellY + 1); // définit la position de la cellule
                 
-                int cellValue = grid[i][j];
+                int cellValue = board.getCellValue(i, j);
                 if (cellValue == -1) { // si la cellule est vide
                     cell.setFillColor(sf::Color::White);
                 } else if (cellValue == 99) { // si la cellule est une pierre (STONE)

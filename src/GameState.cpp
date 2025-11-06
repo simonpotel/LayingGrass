@@ -24,7 +24,7 @@ GameState::GameState()
       username(""),
       selectedColorId(-1),
       requestSent(false),
-      boardSize(20),
+      board(20),
       currentTurnColorId(-1),
       turnCount(0),
       gameOver(false),
@@ -32,10 +32,6 @@ GameState::GameState()
       currentPlayerTileId(-1),
       gameEndWinnerId(-1),
       gameEndLobbyId(-1) {
-    board.resize(20);
-    for (int i = 0; i < 20; ++i) {
-        board[i].resize(20, -1);
-    }
 }
 
 GameState::~GameState() {
@@ -56,14 +52,19 @@ void GameState::updateLobbies(const LobbyListPacket& packet) {
 }
 
 void GameState::updateBoard(const BoardUpdatePacket& packet) {
-    boardSize = packet.size;
-    board.resize(boardSize);
-    for (int i = 0; i < boardSize; ++i) {
-        board[i].resize(boardSize);
-        for (int j = 0; j < boardSize; ++j) {
-            board[i][j] = packet.grid[i * 30 + j];
+    // si la taille a changé, on recrée le board
+    if (board.getSize() != packet.size) {
+        board = Board(packet.size);
+    }
+    
+    // met à jour les cellules du board depuis le packet
+    for (int i = 0; i < packet.size; ++i) {
+        for (int j = 0; j < packet.size; ++j) {
+            int value = packet.grid[i * 30 + j];
+            board.setCellValue(i, j, value);
         }
     }
+    
     currentTurnColorId = packet.currentTurnColorId;
     turnCount = packet.turnCount;
     gameOver = packet.gameOver;
@@ -72,11 +73,8 @@ void GameState::updateBoard(const BoardUpdatePacket& packet) {
 }
 
 void GameState::resetGameData() {
-    boardSize = 20;
-    board.resize(20);
-    for (int i = 0; i < 20; ++i) {
-        board[i].resize(20, -1);
-    }
+    board = Board(20);
+    board.reset();
     currentTurnColorId = -1;
     turnCount = 0;
     gameOver = false;

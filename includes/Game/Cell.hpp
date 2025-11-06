@@ -1,6 +1,5 @@
 #pragma once
 
-// Types de cellules possibles
 enum class CellType {
     EMPTY = -1,      // Cellule vide
     GRASS = 0,       // Herbe (territoire d'un joueur)
@@ -10,13 +9,13 @@ enum class CellType {
     BONUS_ROBBERY = 102    // Bonus de vol
 };
 
+// Représente une cellule du plateau (vide, herbe d'un joueur, obstacle ou bonus)
 class Cell {
 public:
     Cell();
-    Cell(int playerId); // Cellule avec un joueur (GRASS)
-    Cell(CellType type); // Cellule de type spécial (STONE, BONUS, etc.)
+    Cell(int playerId); // cellule avec un joueur (GRASS)
+    Cell(CellType type); // cellule de type spécial (STONE, BONUS, etc.)
     
-    // Getters
     bool isEmpty() const { return type == CellType::EMPTY; }
     bool isGrass() const { return type == CellType::GRASS; }
     bool isStone() const { return type == CellType::STONE; }
@@ -24,24 +23,23 @@ public:
                                   type == CellType::BONUS_STONE || 
                                   type == CellType::BONUS_ROBBERY; }
     
-    int getPlayerId() const { return playerId; } // Retourne le joueur propriétaire (-1 si vide)
+    int getPlayerId() const { return playerId; } // retourne le joueur propriétaire (-1 si vide)
     CellType getType() const { return type; }
     
-    // Setters
-    void setPlayer(int playerId); // Définit un joueur propriétaire (passe en GRASS)
-    void setType(CellType newType);
-    void clear(); // Remet la cellule à vide
+    void setPlayer(int playerId); // définit un joueur propriétaire (passe en GRASS)
+    void setType(CellType newType); // change le type de la cellule
+    void clear(); // remet la cellule à vide
     
-    // Conversion pour compatibilité réseau (int)
-    int toInt() const; // Convertit en int pour les packets réseau
-    static Cell fromInt(int value); // Crée une Cell depuis un int du réseau
+    // conversion pour compatibilité réseau (int)
+    int toInt() const; // convertit en int pour les packets réseau
+    static Cell fromInt(int value); // crée une Cell depuis un int du réseau
     
-    // Opérateurs de comparaison
-    bool operator==(const Cell& other) const;
-    bool operator!=(const Cell& other) const;
+    // opérateurs de comparaison
+    bool operator==(const Cell& other) const; // égalité structurelle
+    bool operator!=(const Cell& other) const; // inégalité structurelle
 
 private:
-    CellType type; // Type de la cellule
+    CellType type; 
     int playerId;  // ID du joueur propriétaire (-1 si aucun joueur)
 };
 

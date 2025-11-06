@@ -2,6 +2,7 @@
 #include "Packet.hpp"
 #include <cstring>
 #include <thread>
+#include <iostream>
 
 #ifdef _WIN32
     #include <winsock2.h>
@@ -64,6 +65,16 @@ bool Client::sendConnectRequest(const char* playerName, int lobbyId, int colorId
     return Packet::sendPacket(socketFd, PacketType::CONNECT_REQUEST, &packet, sizeof(ConnectRequestPacket)); // envoie la demande de connexion au serveur
 }
 
+bool Client::sendCellClick(int lobbyId, int row, int col) {
+    CellClickPacket packet; // structure pour le clic sur une cellule
+    memset(&packet, 0, sizeof(packet)); // initialise la structure à 0
+    packet.lobbyId = lobbyId; // définit l'identifiant du lobby
+    packet.row = row; // définit la ligne
+    packet.col = col; // définit la colonne
+
+    return Packet::sendPacket(socketFd, PacketType::CELL_CLICK, &packet, sizeof(CellClickPacket)); // envoie le clic au serveur
+}
+
 void Client::startReceiving() {
     if (receiving || !connected) {
         return; // déjà en cours de réception ou non connecté
@@ -89,9 +100,9 @@ void Client::receiveLoop() {
         // appelle le callback correspondant au type de paquet via le callback manager
         auto* callback = callbackManager.getCallback(header.type);
         if (callback) {
+            std::cout << "[PACKET] Type: " << static_cast<int>(header.type) << " Size: " << header.size << std::endl;
             (*callback)(data, header.size);
         }
-
         if (data) {
             delete[] (char*)data; // on libère la mémoire allouée pour le paquet
         }

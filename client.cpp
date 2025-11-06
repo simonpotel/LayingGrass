@@ -3,15 +3,17 @@
 #include "Packet.hpp"
 #include "GameState.hpp"
 #include <iostream>
+#include <memory>
+#include <mutex>
 
-// variables globales pour accéder au client et gamestate dans les callbacks
 Client* g_client = nullptr;
-GameState* g_gameState = nullptr;
+std::shared_ptr<GameState> g_gameState;
+std::mutex g_gameStateMutex;
 
 void handleLobbyList(const void* data, size_t size) {
     const LobbyListPacket* packet = (const LobbyListPacket*)data;
 
-    // met à jour la liste des lobbies dans le gamestate
+    std::lock_guard<std::mutex> lock(g_gameStateMutex);
     if (g_gameState) {
         g_gameState->updateLobbies(*packet);
     }
@@ -20,19 +22,18 @@ void handleLobbyList(const void* data, size_t size) {
 void handleConnectResponse(const void* data, size_t size) {
     const ConnectResponsePacket* packet = (const ConnectResponsePacket*)data;
 
+    std::lock_guard<std::mutex> lock(g_gameStateMutex);
     if (packet->accepted) {
         std::cout << "Connection accepted to lobby " << packet->lobbyId << std::endl;
-        // met à jour l'état du jeu
         if (g_gameState) {
             g_gameState->setCurrentLobby(packet->lobbyId);
             g_gameState->setState(ClientState::IN_LOBBY);
         }
     } else {
         std::cout << "Connection refused: " << packet->reason << std::endl;
-        // retour à la sélection du lobby
         if (g_gameState) {
             g_gameState->setState(ClientState::SELECTING_LOBBY);
-            g_gameState->setRequestSent(false); // réinitialise le flag pour permettre une nouvelle tentative
+            g_gameState->setRequestSent(false);
         }
     }
 }
@@ -41,6 +42,7 @@ void handleGameStart(const void* data, size_t size) {
     const GameStartPacket* packet = (const GameStartPacket*)data;
 
     std::cout << "Game started in lobby " << packet->lobbyId << std::endl;
+    std::lock_guard<std::mutex> lock(g_gameStateMutex);
     if (g_gameState) {
         g_gameState->setState(ClientState::IN_GAME);
     }
@@ -50,21 +52,37 @@ void handleGameEnd(const void* data, size_t size) {
     const GameEndPacket* packet = (const GameEndPacket*)data;
 
     std::cout << "Game ended in lobby " << packet->lobbyId << std::endl;
+    
+    int winnerId = packet->winnerId;
+    int lobbyId = packet->lobbyId;
+    std::string winnerName = packet->winnerName;
+    
+    auto newGameState = std::make_shared<GameState>();
+    newGameState->setGameEndWinnerId(winnerId);
+    newGameState->setGameEndLobbyId(lobbyId);
+    newGameState->setGameEndWinnerName(winnerName);
+    newGameState->setState(ClientState::GAME_END);
+    
+    std::lock_guard<std::mutex> lock(g_gameStateMutex);
+    g_gameState = newGameState;
+}
+
+void handleBoardUpdate(const void* data, size_t size) {
+    const BoardUpdatePacket* packet = (const BoardUpdatePacket*)data;
+    
+    std::lock_guard<std::mutex> lock(g_gameStateMutex);
     if (g_gameState) {
-        g_gameState->setState(ClientState::GAME_END);
-        g_gameState->setRequestSent(false);
-        g_gameState->setCurrentLobby(-1);
+        g_gameState->updateBoard(*packet);
     }
 }
 
 int main() {
     Client client;
-    GameState gameState;
+    auto gameState = std::make_shared<GameState>();
 
     g_client = &client;
-    g_gameState = &gameState;
+    g_gameState = gameState;
 
-    // connexion au serveur
     if (!client.connect("127.0.0.1", 5555)) {
         std::cerr << "Error: Cannot connect to server" << std::endl;
         return 1;
@@ -72,36 +90,45 @@ int main() {
 
     std::cout << "Connected to server" << std::endl;
 
-    // enregistrement des callbacks
     client.getCallbackManager().registerCallback(PacketType::LOBBY_LIST, handleLobbyList);
     client.getCallbackManager().registerCallback(PacketType::CONNECT_RESPONSE, handleConnectResponse);
     client.getCallbackManager().registerCallback(PacketType::GAME_START, handleGameStart);
     client.getCallbackManager().registerCallback(PacketType::GAME_END, handleGameEnd);
+    client.getCallbackManager().registerCallback(PacketType::BOARD_UPDATE, handleBoardUpdate);
 
-    // démarre la réception des paquets
     client.startReceiving();
 
-    // crée la fenêtre de rendu
     auto window = Render::createWindow();
     if (!window || !window->isOpen()) {
         std::cerr << "Error: Cannot create window" << std::endl;
         return 1;
     }
 
-    // boucle principale du jeu
     while (window->isOpen()) {
-        // gère les inputs utilisateur
-        if (Render::handleInput(*window, gameState)) {
-            break; // demande de quitter
+        std::shared_ptr<GameState> currentGameState;
+        {
+            std::lock_guard<std::mutex> lock(g_gameStateMutex);
+            currentGameState = g_gameState;
+        }
+        
+        if (!currentGameState) {
+            continue;
+        }
+        
+        if (Render::handleInput(*window, *currentGameState)) {
+            break;
         }
 
-        // si l'utilisateur a validé son nom, envoie la demande de connexion une seule fois
-        if (gameState.getState() == ClientState::WAITING_FOR_RESPONSE && !gameState.isRequestSent()) {
-            client.sendConnectRequest(gameState.getUsername().c_str(), gameState.getSelectedLobby(), gameState.getSelectedColor());
-            gameState.setRequestSent(true); // marque la requête comme envoyée
+        if (currentGameState->getState() == ClientState::WAITING_FOR_RESPONSE && !currentGameState->isRequestSent()) {
+            client.sendConnectRequest(currentGameState->getUsername().c_str(), currentGameState->getSelectedLobby(), currentGameState->getSelectedColor());
+            {
+                std::lock_guard<std::mutex> lock(g_gameStateMutex);
+                if (g_gameState == currentGameState) {
+                    g_gameState->setRequestSent(true);
+                }
+            }
         }
 
-        // rendu
-        Render::render(*window, gameState);
+        Render::render(*window, *currentGameState);
     }
 }

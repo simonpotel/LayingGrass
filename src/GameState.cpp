@@ -23,7 +23,19 @@ GameState::GameState()
       currentLobbyId(-1),
       username(""),
       selectedColorId(-1),
-      requestSent(false) {
+      requestSent(false),
+      boardSize(20),
+      currentTurnColorId(-1),
+      turnCount(0),
+      gameOver(false),
+      winnerId(-1),
+      currentPlayerTileId(-1),
+      gameEndWinnerId(-1),
+      gameEndLobbyId(-1) {
+    board.resize(20);
+    for (int i = 0; i < 20; ++i) {
+        board[i].resize(20, -1);
+    }
 }
 
 GameState::~GameState() {
@@ -41,4 +53,33 @@ void GameState::updateLobbies(const LobbyListPacket& packet) {
     } else if (currentState == ClientState::GAME_END && !lobbies.empty()) {
         currentState = ClientState::SELECTING_LOBBY;
     }
+}
+
+void GameState::updateBoard(const BoardUpdatePacket& packet) {
+    boardSize = packet.size;
+    board.resize(boardSize);
+    for (int i = 0; i < boardSize; ++i) {
+        board[i].resize(boardSize);
+        for (int j = 0; j < boardSize; ++j) {
+            board[i][j] = packet.grid[i * 30 + j];
+        }
+    }
+    currentTurnColorId = packet.currentTurnColorId;
+    turnCount = packet.turnCount;
+    gameOver = packet.gameOver;
+    winnerId = packet.winnerId;
+    currentPlayerTileId = packet.currentPlayerTileId;
+}
+
+void GameState::resetGameData() {
+    boardSize = 20;
+    board.resize(20);
+    for (int i = 0; i < 20; ++i) {
+        board[i].resize(20, -1);
+    }
+    currentTurnColorId = -1;
+    turnCount = 0;
+    gameOver = false;
+    winnerId = -1;
+    currentPlayerTileId = -1;
 }

@@ -10,7 +10,9 @@ enum class PacketType {
     CONNECT_RESPONSE, // réponse du serveur à la demande de connexion
     LOBBY_LIST, // liste des lobbies disponibles
     GAME_START, // début de la partie
-    GAME_END // fin de la partie
+    GAME_END, // fin de la partie
+    BOARD_UPDATE, // mise à jour de la grille du jeu
+    CELL_CLICK // clic sur une cellule de la grille
 };
 
 #include "PacketCallback.hpp"
@@ -55,6 +57,25 @@ struct GameStartPacket {
 
 struct GameEndPacket {
     int lobbyId; // identifiant du lobby
+    int winnerId; // identifiant de la couleur du gagnant (-1 si pas de gagnant)
+    char winnerName[256]; // nom du joueur gagnant
+};
+
+struct CellClickPacket {
+    int lobbyId; // identifiant du lobby
+    int row; // ligne de la cellule cliquée
+    int col; // colonne de la cellule cliquée
+};
+
+struct BoardUpdatePacket {
+    int lobbyId; // identifiant du lobby
+    int size; // taille de la grille (20 ou 30)
+    int grid[900]; // grille 30x30 max (900 cellules)
+    int currentTurnColorId; // couleur du joueur dont c'est le tour
+    int turnCount; // nombre de tours effectués
+    bool gameOver; // true si la partie est terminée
+    int winnerId; // identifiant de la couleur du gagnant (-1 si pas de gagnant)
+    int currentPlayerTileId; // ID de la tuile du joueur dont c'est le tour (-1 si aucune tuile)
 };
 
 namespace Packet {

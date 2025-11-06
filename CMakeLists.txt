@@ -5,6 +5,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+if(MSVC)
+    add_compile_options(/FS)
+endif()
+
 include(FetchContent)
 
 set(SFML_BUILD_DOC OFF CACHE BOOL "" FORCE)
@@ -125,6 +129,10 @@ file(GLOB_RECURSE TEST_SOURCES "tests/*.cpp")
 
 if(TEST_SOURCES)
     add_executable(LayingGrassTests ${TEST_SOURCES} ${CLIENT_SOURCES})
+    if(MSVC)
+        target_compile_options(LayingGrassTests PRIVATE /FS)
+        set_property(TARGET LayingGrassTests PROPERTY COMPILE_OPTIONS "$<$<COMPILE_LANGUAGE:CXX>:/FS>")
+    endif()
     target_link_libraries(LayingGrassTests PRIVATE
         GTest::gtest
         GTest::gtest_main

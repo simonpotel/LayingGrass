@@ -1,5 +1,8 @@
 #include <gtest/gtest.h>
 #include "Render.hpp"
+#include "Client.hpp"
+
+Client* g_client = nullptr;
 
 // test de la création de la fenêtre de rendu avec SFML
 

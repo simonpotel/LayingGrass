@@ -3,12 +3,12 @@
 #include <algorithm>
 
 std::unique_ptr<sf::Texture> Background::load(const std::string& filename) {
-    auto texture = std::make_unique<sf::Texture>(); // crée une texture
-    if (!texture->loadFromFile(filename) && !texture->loadFromFile("../resources/" + filename)) {
-        std::cerr << "Error: Cannot load background " << filename << std::endl; // affiche un message d'erreur si la texture n'est pas chargée
+    auto texture = std::make_unique<sf::Texture>();
+    if (!texture->loadFromFile(filename)) {
+        std::cerr << "Error: Cannot load background " << filename << std::endl;
         return nullptr;
     }
-    return texture; // retourne la texture
+    return texture;
 }
 
 void Background::draw(sf::RenderWindow& window, sf::Texture& texture) {

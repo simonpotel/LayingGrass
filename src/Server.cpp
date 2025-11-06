@@ -1,7 +1,9 @@
 #include "Server.hpp"
+#include "Game/Game.hpp"
 #include <thread>
 #include <chrono>
 #include <cstring>
+#include <iostream>
 
 #ifdef _WIN32
     #include <winsock2.h>
@@ -53,6 +55,9 @@ void Server::start() {
     running = true; // le serveur est en cours d'exécution
     std::thread acceptThread(&Server::acceptConnections, this); // crée un thread pour accepter les connexions des clients
     acceptThread.detach(); // détache le thread pour que le serveur puisse continuer à fonctionner
+    
+    std::thread gameUpdateThread(&Server::gameUpdateLoop, this); // crée un thread pour la mise à jour des jeux
+    gameUpdateThread.detach(); // détache le thread pour que le serveur puisse continuer à fonctionner
     
     lobbyManager.startPeriodicUpdates([this](const LobbyListPacket& packet) {
         for (auto& player : players) {
@@ -107,6 +112,7 @@ void Server::handleClient(int clientSocket) {
         // appelle le callback correspondant au type de paquet via le callback manager
         auto* callback = callbackManager.getCallback(header.type);
         if (callback) {
+            std::cout << "[PACKET] Type: " << static_cast<int>(header.type) << " Size: " << header.size << std::endl;
             (*callback)(player, data, header.size);
         }
 
@@ -128,7 +134,39 @@ void Server::removePlayer(int clientSocket) {
             if (player->lobbyId != -1) {
                 Lobby* lobby = lobbyManager.findLobbyById(player->lobbyId);
                 if (lobby) {
+                    // retire la connexion du lobby
                     lobby->removeConnection(clientSocket);
+
+                    // si une partie est en cours dans ce lobby, on met fin à la partie sans vainqueur
+                    if (lobby->gameStarted && lobby->getGame() != nullptr) {
+                        Game* game = lobby->getGame();
+                        int boardSize = game->getBoard()->getSize();
+
+                        // diffuse un board vide et un GameEnd avec winnerId = -1
+                        BoardUpdatePacket emptyBoardPacket;
+                        memset(&emptyBoardPacket, 0, sizeof(BoardUpdatePacket));
+                        emptyBoardPacket.lobbyId = lobby->lobbyId;
+                        emptyBoardPacket.size = boardSize;
+                        emptyBoardPacket.currentTurnColorId = -1;
+                        emptyBoardPacket.turnCount = 0;
+                        emptyBoardPacket.gameOver = true;
+                        emptyBoardPacket.winnerId = -1;
+                        emptyBoardPacket.currentPlayerTileId = -1;
+                        for (int i = 0; i < 900; ++i) {
+                            emptyBoardPacket.grid[i] = -1;
+                        }
+                        lobby->broadcast(PacketType::BOARD_UPDATE, &emptyBoardPacket, sizeof(BoardUpdatePacket));
+
+                        GameEndPacket gameEndPacket;
+                        memset(&gameEndPacket, 0, sizeof(GameEndPacket));
+                        gameEndPacket.lobbyId = lobby->lobbyId;
+                        gameEndPacket.winnerId = -1; // pas de vainqueur
+                        gameEndPacket.winnerName[0] = '\0';
+                        lobby->broadcast(PacketType::GAME_END, &gameEndPacket, sizeof(GameEndPacket));
+
+                        // nettoie le lobby et réinitialise l'état des joueurs
+                        clearLobbyAndRemovePlayers(lobby->lobbyId);
+                    }
                 }
             }
             break;
@@ -156,5 +194,62 @@ void Server::clearLobbyAndRemovePlayers(int lobbyId) {
     }
 
     lobby->clear();
+}
+
+void Server::gameUpdateLoop() {
+    while (running) { // tant que le serveur est en cours d'exécution
+        const auto& lobbies = lobbyManager.getLobbies(); // obtient la liste des lobbies
+        for (const auto& lobby : lobbies) {
+            Game* game = lobby->getGame(); // obtient le jeu associé au lobby
+            if (game) { 
+                game->update(); // met à jour le jeu
+                
+                if (game->isGameOver()) { // si la partie est terminée
+                    int winnerId = game->getWinner(); // récupère le winnerId avant de nettoyer
+                    int boardSize = game->getBoard()->getSize(); // récupère la taille du board
+                    
+                    std::string winnerName = "";
+                    for (int conn : lobby->connections) {
+                        auto colorIt = lobby->playerColors.find(conn);
+                        if (colorIt != lobby->playerColors.end() && colorIt->second == winnerId) {
+                            auto nameIt = lobby->playerNames.find(conn);
+                            if (nameIt != lobby->playerNames.end()) {
+                                winnerName = nameIt->second;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    BoardUpdatePacket emptyBoardPacket; // paquet de mise à jour de la grille vide
+                    memset(&emptyBoardPacket, 0, sizeof(BoardUpdatePacket));
+                    emptyBoardPacket.lobbyId = lobby->lobbyId;
+                    emptyBoardPacket.size = boardSize;
+                    emptyBoardPacket.currentTurnColorId = -1;
+                    emptyBoardPacket.turnCount = 0;
+                    emptyBoardPacket.gameOver = true;
+                    emptyBoardPacket.winnerId = -1;
+                    
+                    for (int i = 0; i < 900; ++i) {
+                        emptyBoardPacket.grid[i] = -1; // initialise toutes les cellules à -1 (vide)
+                    }
+                    
+                    lobby->broadcast(PacketType::BOARD_UPDATE, &emptyBoardPacket, sizeof(BoardUpdatePacket)); // envoie le board vide à tous les joueurs du lobby
+                    
+                    GameEndPacket gameEndPacket; // paquet de fin de partie
+                    memset(&gameEndPacket, 0, sizeof(GameEndPacket));
+                    gameEndPacket.lobbyId = lobby->lobbyId;
+                    gameEndPacket.winnerId = winnerId;
+                    strncpy(gameEndPacket.winnerName, winnerName.c_str(), sizeof(gameEndPacket.winnerName) - 1);
+                    gameEndPacket.winnerName[sizeof(gameEndPacket.winnerName) - 1] = '\0';
+                    
+                    lobby->broadcast(PacketType::GAME_END, &gameEndPacket, sizeof(GameEndPacket)); // envoie le paquet de fin de partie à tous les joueurs du lobby
+                    
+                    clearLobbyAndRemovePlayers(lobby->lobbyId); // vide le lobby et retire les joueurs du lobby
+                }
+            }
+        }
+        
+        std::this_thread::sleep_for(std::chrono::seconds(1)); // attend 1 seconde avant de continuer la boucle (peut être inutile)
+    }
 }
 

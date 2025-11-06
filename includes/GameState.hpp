@@ -17,7 +17,8 @@ enum class ClientState {
     WAITING_FOR_RESPONSE, // en attente de la réponse du serveur
     IN_LOBBY, // dans un lobby
     IN_GAME, // en jeu
-    GAME_END // fin de partie
+    GAME_END, // fin de partie
+    VIEWING_TILES // visualisation de toutes les tuiles (debug)
 };
 
 // classe pour gérer l'état du client
@@ -56,6 +57,28 @@ public:
     void setRequestSent(bool sent) { requestSent = sent; }
     bool isRequestSent() const { return requestSent; }
 
+    // gestion du board
+    void updateBoard(const BoardUpdatePacket& packet);
+    const std::vector<std::vector<int>>& getBoard() const { return board; }
+    int getBoardSize() const { return boardSize; }
+    int getCurrentTurnColorId() const { return currentTurnColorId; }
+    int getTurnCount() const { return turnCount; }
+    bool isGameOver() const { return gameOver; }
+    int getWinnerId() const { return winnerId; }
+    
+    // gestion de la tuile actuelle
+    int getCurrentPlayerTileId() const { return currentPlayerTileId; }
+    
+    void resetGameData();
+    
+    // gestion du winnerId du GameEnd
+    void setGameEndWinnerId(int winnerId) { gameEndWinnerId = winnerId; }
+    int getGameEndWinnerId() const { return gameEndWinnerId; }
+    void setGameEndLobbyId(int lobbyId) { gameEndLobbyId = lobbyId; }
+    int getGameEndLobbyId() const { return gameEndLobbyId; }
+    void setGameEndWinnerName(const std::string& name) { gameEndWinnerName = name; }
+    const std::string& getGameEndWinnerName() const { return gameEndWinnerName; }
+
 private:
     ClientState currentState; // état actuel du client
     std::vector<LobbyInfo> lobbies; // liste des lobbies disponibles
@@ -64,6 +87,17 @@ private:
     std::string username; // nom d'utilisateur saisi
     int selectedColorId; // identifiant de la couleur sélectionnée (-1 si aucune)
     bool requestSent; // true si la requête de connexion a été envoyée
+    
+    std::vector<std::vector<int>> board; // grille du jeu
+    int boardSize; // taille de la grille
+    int currentTurnColorId; // couleur du joueur dont c'est le tour
+    int turnCount; // nombre de tours effectués
+    bool gameOver; // true si la partie est terminée
+    int winnerId; // identifiant de la couleur du gagnant
+    int currentPlayerTileId; // ID de la tuile du joueur actif (-1 si aucune)
+    int gameEndWinnerId; // identifiant de la couleur du gagnant stocké pour l'affichage GameEnd
+    int gameEndLobbyId; // identifiant du lobby stocké pour l'affichage GameEnd
+    std::string gameEndWinnerName; // nom du joueur gagnant stocké pour l'affichage GameEnd
 };
 
 #endif

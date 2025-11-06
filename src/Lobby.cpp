@@ -1,4 +1,5 @@
 #include "Lobby.hpp"
+#include "Game/Game.hpp"
 #include <algorithm>
 
 Lobby::Lobby(int id) : lobbyId(id), gameStarted(false) {
@@ -30,9 +31,23 @@ void Lobby::removeConnection(int connection) {
 }
 
 void Lobby::clear() {
+    game.reset();
     connections.clear();
     playerNames.clear();
     playerColors.clear();
+    gameStarted = false;
+}
+
+void Lobby::startGame() {
+    if (game) {
+        return;
+    }
+    game = std::make_unique<Game>(lobbyId, this);
+    gameStarted = true;
+}
+
+void Lobby::endGame() {
+    game.reset();
     gameStarted = false;
 }
 

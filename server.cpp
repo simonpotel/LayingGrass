@@ -1,4 +1,5 @@
 #include "Server.hpp"
+#include "Game/Game.hpp"
 #include "Packet.hpp"
 #include <iostream>
 #include <thread>
@@ -67,35 +68,17 @@ void handleConnectRequest(Player* player, const void* data, size_t size) {
 
         std::cout << "Player " << player->playerName << " connected to lobby " << packet->lobbyId << std::endl;
 
-        Packet::sendPacket(player->connection, PacketType::CONNECT_RESPONSE, &response, sizeof(response)); // envoie la réponse de connexion au client
+        Packet::sendPacket(player->connection, PacketType::CONNECT_RESPONSE, &response, sizeof(response));
 
-        if (lobby->isFull()) { // si le lobby est plein, on lance la partie
-            lobby->gameStarted = true;
+        if (lobby->isFull()) {
             GameStartPacket gameStartPacket;
             gameStartPacket.lobbyId = packet->lobbyId;
 
-            lobby->broadcast(PacketType::GAME_START, &gameStartPacket, sizeof(GameStartPacket)); // envoie le paquet de début de partie à tous les clients du lobby
+            lobby->broadcast(PacketType::GAME_START, &gameStartPacket, sizeof(GameStartPacket));
 
-            std::cout << "Lobby " << packet->lobbyId << " is full, starting game!" << std::endl; // affiche un message dans la console
+            std::cout << "Lobby " << packet->lobbyId << " is full, starting game!" << std::endl;
 
-            int lobbyId = packet->lobbyId;
-            
-            std::thread gameEndThread([lobbyId]() { // crée un thread pour la fin de la partie
-                std::this_thread::sleep_for(std::chrono::seconds(5)); // attends 5sec pour finir la game (seulement pour debug pour le moment à retirer plus tard)
-
-                if (g_server) { // si le serveur existe, on récupère le lobby
-                    Lobby* lobby = g_server->getLobbyManager().findLobbyById(lobbyId); // récupère le lobby par son id
-                    if (lobby) { // si le lobby existe, on envoie le paquet de fin de partie à tous les clients du lobby
-                        GameEndPacket gameEndPacket;
-                        gameEndPacket.lobbyId = lobbyId;
-                        lobby->broadcast(PacketType::GAME_END, &gameEndPacket, sizeof(GameEndPacket)); // envoie le paquet de fin de partie à tous les clients du lobby
-                    }
-                    g_server->clearLobbyAndRemovePlayers(lobbyId); // vide le lobby et retire les joueurs du lobby
-                }
-                
-                std::cout << "Game ended in lobby " << lobbyId << std::endl;
-            });
-            gameEndThread.detach();
+            lobby->startGame();
         }
     } else {
         response.accepted = false;
@@ -104,11 +87,32 @@ void handleConnectRequest(Player* player, const void* data, size_t size) {
     }
 }
 
+void handleCellClick(Player* player, const void* data, size_t size) {
+    const CellClickPacket* packet = (const CellClickPacket*)data;
+    
+    if (!g_server) {
+        return;
+    }
+    
+    Lobby* lobby = g_server->getLobbyManager().findLobbyById(packet->lobbyId);
+    if (!lobby) {
+        return;
+    }
+    
+    Game* game = lobby->getGame();
+    if (!game) {
+        return;
+    }
+    
+    game->handleCellClick(player->connection, packet->row, packet->col);
+}
+
 int main() {
     Server server(5555);
     g_server = &server; // stocke le pointeur global pour le callback
 
     server.getCallbackManager().registerCallback(PacketType::CONNECT_REQUEST, handleConnectRequest);
+    server.getCallbackManager().registerCallback(PacketType::CELL_CLICK, handleCellClick);
     server.start();
 
     std::cout << "Server started on port 5555" << std::endl;

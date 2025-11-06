@@ -1,6 +1,6 @@
 #include "Game/Game.hpp"
 #include "Game/Cell.hpp"
-#include "Game/TilesData.hpp"
+#include "Game/Tile.hpp"
 #include "Packet.hpp"
 #include <algorithm>
 #include <random>
@@ -10,10 +10,8 @@
 
 Game::Game(int lobbyId, Lobby* lobby)
     : lobbyId(lobbyId), lobby(lobby), board(20), currentTurnIndex(0), turnCount(0), winnerId(-1), rng(std::random_device{}()) {
-    TilesData::initialize(); // Initialise les 96 tuiles
     initializePlayers();
     
-    // Distribue la première tuile (1x1) au premier joueur
     int firstPlayer = getCurrentPlayerConnection();
     if (firstPlayer != -1) {
         giveTileToPlayer(firstPlayer);
@@ -106,13 +104,10 @@ void Game::nextTurn() {
 }
 
 void Game::giveTileToPlayer(int connection) {
-    // Vérifie si c'est le premier tour du joueur
     if (isFirstTurnForPlayer(connection)) {
-        // Premier tour : tuile 1x1 (monomino, tuile 0)
-        playerTiles[connection] = 0;
+        playerTiles[connection] = static_cast<int>(TileId::TILE_0);
     } else {
-        // Tours suivants : tuile aléatoire parmi les 96
-        std::uniform_int_distribution<int> tileDist(0, TilesData::TOTAL_TILES - 1);
+        std::uniform_int_distribution<int> tileDist(0, static_cast<int>(TileId::TOTAL_TILES) - 1);
         playerTiles[connection] = tileDist(rng);
     }
 }
@@ -134,10 +129,9 @@ bool Game::isFirstTurnForPlayer(int connection) const {
 }
 
 bool Game::canPlaceTile(int connection, int tileId, int anchorRow, int anchorCol) const {
-    // Récupère la tuile
-    const Tile& tile = TilesData::getTile(tileId);
+    const Tile& tile = Tile::getTile(Tile::fromInt(tileId));
     if (!tile.isValid()) {
-        return false; // Tuile invalide
+        return false;
     }
     
     int colorId = getPlayerColorId(connection);
@@ -183,13 +177,11 @@ bool Game::canPlaceTile(int connection, int tileId, int anchorRow, int anchorCol
 }
 
 bool Game::placeTile(int connection, int tileId, int anchorRow, int anchorCol) {
-    // Vérifie d'abord si le placement est possible
     if (!canPlaceTile(connection, tileId, anchorRow, anchorCol)) {
         return false;
     }
     
-    // Récupère la tuile et la couleur du joueur
-    const Tile& tile = TilesData::getTile(tileId);
+    const Tile& tile = Tile::getTile(Tile::fromInt(tileId));
     int colorId = getPlayerColorId(connection);
     
     if (colorId == -1) {

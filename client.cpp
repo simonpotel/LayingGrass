@@ -2,12 +2,10 @@
 #include "Render.hpp"
 #include "Packet.hpp"
 #include "GameState.hpp"
-#include "Game/TilesData.hpp"
 #include <iostream>
 #include <memory>
 #include <mutex>
 
-// variables globales pour accéder au client et gamestate dans les callbacks
 Client* g_client = nullptr;
 std::shared_ptr<GameState> g_gameState;
 std::mutex g_gameStateMutex;
@@ -79,16 +77,12 @@ void handleBoardUpdate(const void* data, size_t size) {
 }
 
 int main() {
-    // Initialise les 96 tuiles
-    TilesData::initialize();
-    
     Client client;
     auto gameState = std::make_shared<GameState>();
 
     g_client = &client;
     g_gameState = gameState;
 
-    // connexion au serveur
     if (!client.connect("127.0.0.1", 5555)) {
         std::cerr << "Error: Cannot connect to server" << std::endl;
         return 1;
@@ -96,24 +90,20 @@ int main() {
 
     std::cout << "Connected to server" << std::endl;
 
-    // enregistrement des callbacks
     client.getCallbackManager().registerCallback(PacketType::LOBBY_LIST, handleLobbyList);
     client.getCallbackManager().registerCallback(PacketType::CONNECT_RESPONSE, handleConnectResponse);
     client.getCallbackManager().registerCallback(PacketType::GAME_START, handleGameStart);
     client.getCallbackManager().registerCallback(PacketType::GAME_END, handleGameEnd);
     client.getCallbackManager().registerCallback(PacketType::BOARD_UPDATE, handleBoardUpdate);
 
-    // démarre la réception des paquets
     client.startReceiving();
 
-    // crée la fenêtre de rendu
     auto window = Render::createWindow();
     if (!window || !window->isOpen()) {
         std::cerr << "Error: Cannot create window" << std::endl;
         return 1;
     }
 
-    // boucle principale du jeu
     while (window->isOpen()) {
         std::shared_ptr<GameState> currentGameState;
         {
@@ -125,12 +115,10 @@ int main() {
             continue;
         }
         
-        // gère les inputs utilisateur
         if (Render::handleInput(*window, *currentGameState)) {
-            break; // demande de quitter
+            break;
         }
 
-        // si l'utilisateur a validé son nom, envoie la demande de connexion une seule fois
         if (currentGameState->getState() == ClientState::WAITING_FOR_RESPONSE && !currentGameState->isRequestSent()) {
             client.sendConnectRequest(currentGameState->getUsername().c_str(), currentGameState->getSelectedLobby(), currentGameState->getSelectedColor());
             {
@@ -141,7 +129,6 @@ int main() {
             }
         }
 
-        // rendu
         Render::render(*window, *currentGameState);
     }
 }

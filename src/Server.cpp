@@ -134,7 +134,39 @@ void Server::removePlayer(int clientSocket) {
             if (player->lobbyId != -1) {
                 Lobby* lobby = lobbyManager.findLobbyById(player->lobbyId);
                 if (lobby) {
+                    // retire la connexion du lobby
                     lobby->removeConnection(clientSocket);
+
+                    // si une partie est en cours dans ce lobby, on met fin à la partie sans vainqueur
+                    if (lobby->gameStarted && lobby->getGame() != nullptr) {
+                        Game* game = lobby->getGame();
+                        int boardSize = game->getBoard()->getSize();
+
+                        // diffuse un board vide et un GameEnd avec winnerId = -1
+                        BoardUpdatePacket emptyBoardPacket;
+                        memset(&emptyBoardPacket, 0, sizeof(BoardUpdatePacket));
+                        emptyBoardPacket.lobbyId = lobby->lobbyId;
+                        emptyBoardPacket.size = boardSize;
+                        emptyBoardPacket.currentTurnColorId = -1;
+                        emptyBoardPacket.turnCount = 0;
+                        emptyBoardPacket.gameOver = true;
+                        emptyBoardPacket.winnerId = -1;
+                        emptyBoardPacket.currentPlayerTileId = -1;
+                        for (int i = 0; i < 900; ++i) {
+                            emptyBoardPacket.grid[i] = -1;
+                        }
+                        lobby->broadcast(PacketType::BOARD_UPDATE, &emptyBoardPacket, sizeof(BoardUpdatePacket));
+
+                        GameEndPacket gameEndPacket;
+                        memset(&gameEndPacket, 0, sizeof(GameEndPacket));
+                        gameEndPacket.lobbyId = lobby->lobbyId;
+                        gameEndPacket.winnerId = -1; // pas de vainqueur
+                        gameEndPacket.winnerName[0] = '\0';
+                        lobby->broadcast(PacketType::GAME_END, &gameEndPacket, sizeof(GameEndPacket));
+
+                        // nettoie le lobby et réinitialise l'état des joueurs
+                        clearLobbyAndRemovePlayers(lobby->lobbyId);
+                    }
                 }
             }
             break;

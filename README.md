@@ -9,6 +9,25 @@ Laying Grass is a tile-placement game where players place grass tiles on a grid 
 ![GoogleTest](https://img.shields.io/badge/GoogleTest-4285F4?style=for-the-badge&logo=google&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
 
+## Preview
+
+### Lobby Selection
+![Selecting Lobby](docs/preview/SelectingLobby.png)
+
+### Entering Username
+![Entering Username](docs/preview/EnteringUsername.png)
+![Entering Username 2](docs/preview/EnteringUsername2.png)
+
+### In Lobby
+![In Lobby](docs/preview/InLobby.png)
+
+### In Game
+![In Game](docs/preview/InGame.png)
+![In Game 2](docs/preview/InGame2.png)
+
+### Tile Viewer
+![Tile Viewer](docs/preview/TileViewer.png)
+
 ## Quick Start
 
 Pre-built binaries are available in the [Releases](https://github.com/simonpotel/LayingGrass/releases) section of the repository.

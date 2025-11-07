@@ -3,15 +3,15 @@
 
 namespace {
     const sf::Color PLAYERS_COLORS_ARRAY[9] = {
-        sf::Color(255, 0, 0),     // rouge
-        sf::Color(0, 0, 255),     // bleu
-        sf::Color(0, 255, 0),     // vert
-        sf::Color(255, 255, 0),   // jaune
-        sf::Color(255, 165, 0),   // orange
-        sf::Color(128, 0, 128),   // violet
-        sf::Color(0, 255, 255),   // cyan
-        sf::Color(255, 0, 255),   // magenta
-        sf::Color(255, 192, 203)  // rose
+        sf::Color(34, 139, 34),   // Forest Green
+        sf::Color(65, 105, 225),  // Royal Blue
+        sf::Color(220, 20, 60),   // Crimson
+        sf::Color(255, 140, 0),   // Dark Orange
+        sf::Color(147, 112, 219), // Medium Purple
+        sf::Color(0, 206, 209),   // Dark Turquoise
+        sf::Color(255, 105, 180), // Hot Pink
+        sf::Color(218, 165, 32),  // Goldenrod
+        sf::Color(46, 139, 87)    // Sea Green
     };
 }
 

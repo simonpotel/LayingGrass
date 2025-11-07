@@ -3,22 +3,28 @@
 #include "Render/utils/Board.hpp"
 #include "Render/utils/TileRenderer.hpp"
 #include "Game/Tile.hpp"
+#include "Game/PlacementRules.hpp"
 #include "Client.hpp"
 #include <sstream>
 #include <iostream>
 
 extern Client* g_client;
 
+namespace {
+    const float BOARD_X = 50.0f; // position x du plateau
+    const float BOARD_Y = 50.0f; // position y du plateau
+    const float BOARD_CELL_SIZE = 15.0f; // taille d'une cellule du plateau
+
+    int s_hoverRow = -1; // ligne survolée
+    int s_hoverCol = -1; // colonne survolée
+}
+
 void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     int currentLobbyId = gameState.getCurrentLobby();
     const auto& board = gameState.getBoard(); // récupère la grille du jeu
     int boardSize = board.getSize(); // récupère la taille de la grille
     
-    float boardX = 50.0f; // définit la position x du board
-    float boardY = 50.0f; // définit la position y du board
-    float cellSize = 15.0f; // définit la taille des cellules
-    
-    BoardRenderer::draw(window, board, boardX, boardY, cellSize); // dessine la grille
+    BoardRenderer::draw(window, board, BOARD_X, BOARD_Y, BOARD_CELL_SIZE); // dessine la grille
     
     std::stringstream ss;
     ss << "Lobby #" << currentLobbyId; // définit le nom du lobby
@@ -64,6 +70,12 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
                 Text::draw(window, ss.str(), tileX, tileY - 30, 20);
                 
                 TileRenderer::draw(window, tile, tileX, tileY, tileCellSize, myColorId);
+
+                if (s_hoverRow >= 0 && s_hoverCol >= 0) {
+                    bool isFirstTurn = !PlacementRules::playerHasCells(board, myColorId);
+                    bool canPlace = PlacementRules::canPlaceTile(board, tile, s_hoverRow, s_hoverCol, myColorId, isFirstTurn);
+                    BoardRenderer::drawPreview(window, tile, BOARD_X, BOARD_Y, BOARD_CELL_SIZE, boardSize, s_hoverRow, s_hoverCol, canPlace, GameState::PLAYERS_COLORS[myColorId]);
+                }
             }
         }
     }
@@ -74,6 +86,18 @@ bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Eve
     if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F1) {
         gameState.setState(ClientState::VIEWING_TILES);
         return false;
+    }
+    
+    if (event.type == sf::Event::MouseMoved) {
+        int boardSize = gameState.getBoard().getSize(); // récupère la taille de la grille
+        int row, col;
+        if (BoardRenderer::handleClick(static_cast<float>(event.mouseMove.x), static_cast<float>(event.mouseMove.y), BOARD_X, BOARD_Y, BOARD_CELL_SIZE, boardSize, row, col)) {
+            s_hoverRow = row; // enregistre la ligne survolée
+            s_hoverCol = col; // enregistre la colonne survolée
+        } else {
+            s_hoverRow = -1; // réinitialise la ligne survolée
+            s_hoverCol = -1; // réinitialise la colonne survolée
+        }
     }
     
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
@@ -88,13 +112,10 @@ bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Eve
             return false;
         }
         
-        float boardX = 50.0f; // définit la position x du board
-        float boardY = 50.0f; // définit la position y du board
-        float cellSize = 15.0f; // définit la taille des cellules
         int boardSize = gameState.getBoard().getSize(); // récupère la taille de la grille
         
         int row, col;
-        if (BoardRenderer::handleClick(event.mouseButton.x, event.mouseButton.y, boardX, boardY, cellSize, boardSize, row, col)) { // si le joueur clique sur le board
+        if (BoardRenderer::handleClick(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y), BOARD_X, BOARD_Y, BOARD_CELL_SIZE, boardSize, row, col)) { // si le joueur clique sur le board
             if (g_client) {
                 g_client->sendCellClick(gameState.getCurrentLobby(), row, col); // envoie le clic au serveur
             }

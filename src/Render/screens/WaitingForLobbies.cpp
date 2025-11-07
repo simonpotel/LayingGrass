@@ -1,8 +1,16 @@
 #include "Render/screens/WaitingForLobbies.hpp"
 #include "Render/utils/Text.hpp"
+#include "Render/utils/Theme.hpp"
+#include "Render/utils/Element.hpp"
 
 void WaitingForLobbies::draw(sf::RenderWindow& window, GameState& gameState) {
-    Text::draw(window, "Waiting for lobbies...", 300, 280);
+    sf::Vector2u ws = window.getSize();
+    
+    // texte centré
+    sf::Text waiting = Text::createText("Waiting for lobbies...", 30);
+    Element::center(waiting, static_cast<float>(ws.x), static_cast<float>(ws.y)); // centré horizontalement et verticalement au milieu de l'écran
+    waiting.setFillColor(sf::Color::White);
+    window.draw(waiting);
 }
 
 bool WaitingForLobbies::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Event& event) {

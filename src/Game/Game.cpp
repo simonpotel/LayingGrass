@@ -171,29 +171,28 @@ void Game::endGame() {
         return;
     }
     
-    // TODO: Implémenter la vraie logique de victoire selon les règles du jeu
-    // Pour l'instant, on garde le système aléatoire temporaire
-    std::uniform_int_distribution<int> dist(0, playerConnections.size() - 1); // génère un nombre aléatoire entre 0 et le nombre de joueurs
-    int winnerIndex = dist(rng); // obtient l'index du joueur gagnant
-    winnerId = getPlayerColorId(playerConnections[winnerIndex]); // obtient l'identifiant de la couleur du joueur gagnant
-    
-    // Exemple d'utilisation de la classe Cell pour trouver le gagnant :
-    // int bestPlayer = -1;
-    // int bestSquare = 0;
-    // int bestTerritory = 0;
-    // 
-    // for (int conn : playerConnections) {
-    //     int colorId = getPlayerColorId(conn);
-    //     int square = getPlayerLargestSquare(colorId);
-    //     int territory = getPlayerTerritoryCount(colorId);
-    //     
-    //     if (square > bestSquare || (square == bestSquare && territory > bestTerritory)) {
-    //         bestSquare = square;
-    //         bestTerritory = territory;
-    //         bestPlayer = colorId;
-    //     }
-    // }
-    // winnerId = bestPlayer;
+    int bestTerritory = -1;
+    int bestPlayerColor = -1;
+    bool tie = false;
+
+    for (int conn : playerConnections) {
+        int colorId = getPlayerColorId(conn);
+        if (colorId == -1) {
+            continue;
+        }
+
+        int territory = getPlayerTerritoryCount(colorId);
+
+        if (territory > bestTerritory) {
+            bestTerritory = territory;
+            bestPlayerColor = colorId;
+            tie = false;
+        } else if (territory == bestTerritory && bestTerritory != -1) {
+            tie = true;
+        }
+    }
+
+    winnerId = tie ? -1 : bestPlayerColor;
 }
 
 int Game::getCurrentPlayerConnection() const {

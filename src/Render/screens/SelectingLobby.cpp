@@ -1,99 +1,125 @@
 #include "Render/screens/SelectingLobby.hpp"
 #include "Render/utils/Text.hpp"
-#include "Render/utils/Button.hpp"
 #include "Render/utils/Selectable.hpp"
-#include "Render/utils/Background.hpp"
+#include "Render/utils/Theme.hpp"
+#include "Render/utils/Element.hpp"
 #include <sstream>
 
-static const float LOBBY_X = 50.0f;
-static const float LOBBY_Y_START = 120.0f;
-static const float LOBBY_WIDTH = 700.0f;
-static const float LOBBY_HEIGHT = 70.0f;
-static const float LOBBY_SPACING = 90.0f;
-static const float BUTTON_X = 300.0f;
-static const float BUTTON_Y = 520.0f;
-static const float BUTTON_WIDTH = 200.0f;
-static const float BUTTON_HEIGHT = 60.0f;
+static const int MAX_PLAYERS = 2; // nombre maximum de joueurs par lobby
 
 void SelectingLobby::draw(sf::RenderWindow& window, GameState& gameState) {
-    static std::unique_ptr<sf::Texture> backgroundTexture; // texture du fond d'écran
-    static std::vector<std::unique_ptr<Selectable>> lobbySelectables; // liste des éléments sélectionnables
-    static std::unique_ptr<Button> joinButton; // bouton de joindre un lobby
+    sf::Vector2u ws = window.getSize();
     
-    if (!backgroundTexture) {
-        backgroundTexture = Background::load("menu.png"); // charge la texture du fond d'écran
-    }
-    if (backgroundTexture) {
-        Background::drawFullscreen(window, *backgroundTexture); // affiche le fond d'écran
-    }
+    // conteneur
+    float cx = (ws.x - 800.0f) / 2.0f; // position x centrée: (largeur fenêtre - largeur conteneur) / 2
+    float cy = (ws.y - 400.0f) / 2.0f; // position y centrée: (hauteur fenêtre - hauteur conteneur) / 2
     
-    Text::draw(window, "Select a Lobby:", 50, 30, 30); // affiche le texte "Select a Lobby:"
-
+    sf::RectangleShape container(sf::Vector2f(800.0f, 400.0f));
+    container.setPosition(cx, cy);
+    container.setFillColor(sf::Color(30, 30, 30));
+    container.setOutlineColor(sf::Color::White);
+    container.setOutlineThickness(2);
+    window.draw(container);
+    
+    // texte "Select a Lobby:"
+    sf::Text select = Text::createText("Select a Lobby:", 30);
+    Element::centerH(select, static_cast<float>(ws.x), cy - select.getLocalBounds().height - 20.0f); // centré horizontalement, positionné au-dessus du conteneur avec espacement
+    select.setFillColor(sf::Color::White);
+    window.draw(select);
+    
+    static std::vector<std::unique_ptr<Selectable>> selectables;
     const auto& lobbies = gameState.getLobbies();
+    float lx = cx + 20.0f;
+    float ly = cy + 20.0f;
     
-    if (lobbySelectables.size() != lobbies.size()) {
-        lobbySelectables.clear(); // vide la liste des éléments sélectionnables
+    if (selectables.size() != lobbies.size()) {
+        selectables.clear();
         for (size_t i = 0; i < lobbies.size(); i++) {
-            float y = LOBBY_Y_START + i * LOBBY_SPACING; // calcule la position y de l'élément sélectionnable
-            lobbySelectables.push_back(std::make_unique<Selectable>(LOBBY_X, y, LOBBY_WIDTH, LOBBY_HEIGHT)); // crée un élément sélectionnable à la position x, y, avec la largeur et la hauteur spécifiées
+            selectables.push_back(std::make_unique<Selectable>(lx, ly + i * 90.0f, 760.0f, 70.0f)); // position y = position de départ + index * espacement vertical
         }
     }
     
-    if (!joinButton) {
-        joinButton = std::make_unique<Button>(BUTTON_X, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, "Join", 28); // crée un bouton de joindre un lobby à la position x, y, avec la largeur et la hauteur spécifiées
-    }
-    
-    for (size_t i = 0; i < lobbySelectables.size() && i < lobbies.size(); i++) {
-        lobbySelectables[i]->setSelected(gameState.getSelectedLobby() == lobbies[i].lobbyId); // définit si l'élément sélectionnable est sélectionné
-        lobbySelectables[i]->draw(window); // affiche l'élément sélectionnable
+    // affichage des lobbies
+    for (size_t i = 0; i < selectables.size() && i < lobbies.size(); i++) {
+        float y = ly + i * 90.0f; // calcul de la position y de chaque lobby avec espacement
+        selectables[i]->setSelected(gameState.getSelectedLobby() == lobbies[i].lobbyId);
+        selectables[i]->draw(window);
         
-        std::stringstream ss; // crée un stream de chaîne de caractères
-        ss << "Lobby #" << lobbies[i].lobbyId << " - Players: " << lobbies[i].playerCount; // ajoute le nom du lobby et le nombre de joueurs
+        std::stringstream ss;
+        ss << "Lobby #" << lobbies[i].lobbyId;
         if (lobbies[i].gameStarted) {
-            ss << " (Started)"; // ajoute le statut de la partie
+            ss << " (Started)";
         }
+        sf::Text text = Text::createText(ss.str(), 22);
+        text.setPosition(lx + 10, y + 20);
+        text.setFillColor(sf::Color::White);
+        window.draw(text);
         
-        float y = LOBBY_Y_START + i * LOBBY_SPACING; // calcule la position y de l'élément sélectionnable
-        Text::draw(window, ss.str(), 70, y + 20, 22); // affiche le texte
+        std::stringstream ps;
+        ps << "Players " << lobbies[i].playerCount << " / " << MAX_PLAYERS;
+        sf::Text players = Text::createText(ps.str(), 22);
+        sf::FloatRect bounds = players.getLocalBounds();
+        float px = cx + 800.0f - 20.0f - bounds.width - 10; // position x à droite: début conteneur + largeur - padding - largeur texte - marge
+        players.setPosition(px, y + 20);
+        players.setFillColor(sf::Color::White);
+        window.draw(players);
     }
     
-    joinButton->setEnabled(gameState.getSelectedLobby() != -1); // définit si le bouton de joindre un lobby est actif
-    joinButton->draw(window); // affiche le bouton de joindre un lobby
+    // bouton Join
+    float bx = (ws.x - 200.0f) / 2.0f;
+    float by = cy + 400.0f + 30.0f;
+    bool enabled = gameState.getSelectedLobby() != -1;
+    
+    sf::RectangleShape btn(sf::Vector2f(200.0f, 60.0f));
+    btn.setPosition(bx, by);
+    btn.setFillColor(enabled ? Theme::FOREST_GREEN : Theme::NEUTRAL_GRAY);
+    btn.setOutlineColor(sf::Color::White);
+    btn.setOutlineThickness(2);
+    window.draw(btn);
+    
+    sf::Text btnText = Text::createText("Join", 28);
+    Element::centerInContainer(btnText, bx, by, 200.0f, 60.0f); // centrage dans le bouton
+    btnText.setFillColor(enabled ? sf::Color::White : sf::Color(128, 128, 128));
+    window.draw(btnText);
 }
 
 bool SelectingLobby::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Event& event) {
-    static std::vector<std::unique_ptr<Selectable>> lobbySelectables; // liste des éléments sélectionnables
-    static std::unique_ptr<Button> joinButton; // bouton de joindre un lobby
-
-    if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-        sf::Vector2f mousePos(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y)); // récupère la position de la souris
-
-        const auto& lobbies = gameState.getLobbies();
-        
-        if (lobbySelectables.size() != lobbies.size()) {
-            lobbySelectables.clear(); // vide la liste des éléments sélectionnables
-            for (size_t i = 0; i < lobbies.size(); i++) {
-                float y = LOBBY_Y_START + i * LOBBY_SPACING; // calcule la position y de l'élément sélectionnable
-                lobbySelectables.push_back(std::make_unique<Selectable>(LOBBY_X, y, LOBBY_WIDTH, LOBBY_HEIGHT));
-            }
+    if (event.type != sf::Event::MouseButtonPressed || event.mouseButton.button != sf::Mouse::Left) {
+        return false;
+    }
+    
+    static std::vector<std::unique_ptr<Selectable>> selectables;
+    sf::Vector2f mouse(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y));
+    sf::Vector2u ws = window.getSize();
+    const auto& lobbies = gameState.getLobbies();
+    
+    float cx = (ws.x - 800.0f) / 2.0f;
+    float cy = (ws.y - 400.0f) / 2.0f;
+    float lx = cx + 20.0f;
+    float ly = cy + 20.0f;
+    
+    if (selectables.size() != lobbies.size()) {
+        selectables.clear();
+        for (size_t i = 0; i < lobbies.size(); i++) {
+            selectables.push_back(std::make_unique<Selectable>(lx, ly + i * 90.0f, 760.0f, 70.0f));
         }
-        
-        if (!joinButton) {
-            joinButton = std::make_unique<Button>(BUTTON_X, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT, "Join", 28);
-        }
-
-        for (size_t i = 0; i < lobbySelectables.size() && i < lobbies.size(); i++) {
-            if (lobbySelectables[i]->contains(mousePos.x, mousePos.y)) {
-                gameState.setSelectedLobby(lobbies[i].lobbyId); // définit l'identifiant du lobby sélectionné
-                return false;
-            }
-        }
-
-        if (joinButton && joinButton->contains(mousePos.x, mousePos.y) && gameState.getSelectedLobby() != -1) { // vérifie si le bouton de joindre un lobby est cliqué et si un lobby est sélectionné
-            gameState.setState(ClientState::ENTERING_USERNAME); // passe à l'état d'entrée du nom d'utilisateur
+    }
+    
+    for (size_t i = 0; i < selectables.size() && i < lobbies.size(); i++) {
+        if (selectables[i]->contains(mouse.x, mouse.y)) {
+            gameState.setSelectedLobby(lobbies[i].lobbyId);
             return false;
         }
     }
-
+    
+    float bx = (ws.x - 200.0f) / 2.0f;
+    float by = cy + 400.0f + 30.0f;
+    sf::FloatRect btnBounds(bx, by, 200.0f, 60.0f);
+    
+    if (btnBounds.contains(mouse.x, mouse.y) && gameState.getSelectedLobby() != -1) {
+        gameState.setState(ClientState::ENTERING_USERNAME);
+        return false;
+    }
+    
     return false;
 }

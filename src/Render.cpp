@@ -8,9 +8,12 @@
 #include "Render/screens/InGame.hpp"
 #include "Render/screens/GameEnd.hpp"
 #include "Render/screens/TileViewer.hpp"
+#include "Render/utils/Theme.hpp"
+#include "Render/utils/Text.hpp"
+#include "Render/utils/Element.hpp"
 
 std::unique_ptr<sf::RenderWindow> Render::createWindow() {
-    return std::make_unique<sf::RenderWindow>(sf::VideoMode(800, 600), "LayingGrass Client");
+    return std::make_unique<sf::RenderWindow>(sf::VideoMode(1280, 720), "LayingGrass Client", sf::Style::Titlebar | sf::Style::Close);
 }
 
 std::unique_ptr<Render> Render::createScreen(ClientState state) {
@@ -38,6 +41,13 @@ std::unique_ptr<Render> Render::createScreen(ClientState state) {
 
 void Render::render(sf::RenderWindow& window, GameState& gameState) {
     window.clear(sf::Color::Black);
+    
+    // titre (affiché sur tous les écrans)
+    sf::Vector2u ws = window.getSize();
+    sf::Text title = Text::createText("LayingGrass", 60.0f);
+    Element::centerH(title, static_cast<float>(ws.x), 40.0f); // centrage horizontal dans la fenêtre
+    title.setFillColor(sf::Color::White);
+    window.draw(title);
     
     auto screen = createScreen(gameState.getState());
     screen->draw(window, gameState);

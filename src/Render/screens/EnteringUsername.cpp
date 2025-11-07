@@ -1,150 +1,157 @@
 #include "Render/screens/EnteringUsername.hpp"
 #include "Render/utils/Text.hpp"
 #include "Render/utils/Tooltip.hpp"
+#include "Render/utils/Theme.hpp"
+#include "Render/utils/Element.hpp"
 #include "GameState.hpp"
 #include <SFML/Graphics.hpp>
-#include <vector>
 #include <unordered_map>
-
-static const float COLOR_SIZE = 50.0f;
-static const float COLOR_SPACING = 10.0f;
-static const float COLOR_START_X = 250.0f;
-static const float COLOR_START_Y = 360.0f;
+#include <algorithm>
 
 void EnteringUsername::draw(sf::RenderWindow& window, GameState& gameState) {
-    Text::draw(window, "Enter your username:", 250, 150, 30);
-
-    std::string displayName = gameState.getUsername();
-    if (displayName.empty()) {
-        displayName = "_";
-    }
-
-    Text::drawBox(window, 200, 190, 400, 50, sf::Color(40, 40, 40), sf::Color::White); //affiche le box
-    Text::draw(window, displayName, 220, 200, 24);
-
-    Text::draw(window, "Select a color:", 250, 320, 24); //affiche le texte
-
-    int selectedLobbyId = gameState.getSelectedLobby(); //récupère l'id du lobby sélectionné
-    std::vector<int> takenColors;
-    std::unordered_map<int, std::string> colorToPlayerName;
-    if (selectedLobbyId != -1) {
-        const auto& lobbies = gameState.getLobbies(); //récupère la liste des lobbies
-        for (const auto& lobby : lobbies) {
-            if (lobby.lobbyId == selectedLobbyId) {
+    sf::Vector2u ws = window.getSize();
+    
+    // conteneur
+    float cx = (ws.x - 600.0f) / 2.0f; // position x centrée: (largeur fenêtre - largeur conteneur) / 2
+    float cy = (ws.y - 500.0f) / 2.0f; // position y centrée: (hauteur fenêtre - hauteur conteneur) / 2
+    
+    sf::RectangleShape container(sf::Vector2f(600.0f, 500.0f));
+    container.setPosition(cx, cy);
+    container.setFillColor(sf::Color(30, 30, 30));
+    container.setOutlineColor(sf::Color::White);
+    container.setOutlineThickness(2);
+    window.draw(container);
+    
+    // username
+    sf::Text label = Text::createText("Enter your username:", 30);
+    Element::centerH(label, static_cast<float>(ws.x), cy + 40.0f); // centré horizontalement, positionné dans le conteneur
+    label.setFillColor(sf::Color::White);
+    window.draw(label);
+    
+    float ux = (ws.x - 400.0f) / 2.0f; // position x centrée de la boîte de saisie: (largeur fenêtre - largeur boîte) / 2
+    float uy = cy + 90.0f; // position y: début conteneur + offset vertical
+    Text::drawBox(window, ux, uy, 400.0f, 50.0f, sf::Color(40, 40, 40), sf::Color::White);
+    
+    std::string name = gameState.getUsername();
+    if (name.empty()) name = "_";
+    sf::Text nameText = Text::createText(name, 24);
+    nameText.setPosition(ux + 20, uy + 10);
+    nameText.setFillColor(sf::Color::White);
+    window.draw(nameText);
+    
+    // couleurs
+    sf::Text colorLabel = Text::createText("Select a color:", 28);
+    Element::centerH(colorLabel, static_cast<float>(ws.x), cy + 180.0f); // centré horizontalement, positionné dans le conteneur
+    colorLabel.setFillColor(sf::Color::White);
+    window.draw(colorLabel);
+    
+    int lobbyId = gameState.getSelectedLobby();
+    std::vector<int> taken;
+    std::unordered_map<int, std::string> colorToName;
+    if (lobbyId != -1) {
+        for (const auto& lobby : gameState.getLobbies()) {
+            if (lobby.lobbyId == lobbyId) {
                 for (int i = 0; i < lobby.playerCount; i++) {
-                    takenColors.push_back(lobby.players[i].colorId); //ajoute la couleur prise par le joueur
-                    colorToPlayerName[lobby.players[i].colorId] = lobby.players[i].playerName;
+                    taken.push_back(lobby.players[i].colorId);
+                    colorToName[lobby.players[i].colorId] = lobby.players[i].playerName;
                 }
                 break;
             }
         }
     }
-
-    sf::Vector2i mousePos = sf::Mouse::getPosition(window); //récupère la position de la souris
-    int hoveredColorIndex = -1;
-
+    
+    sf::Vector2i mouse = sf::Mouse::getPosition(window);
+    int hovered = -1;
+    float csx = (ws.x - (3 * 50.0f + 2 * 10.0f)) / 2.0f; // position x centrée de la grille: (largeur fenêtre - (3 cases * taille + 2 espacements)) / 2
+    float csy = cy + 230.0f; // position y: début conteneur + offset vertical
+    
     for (int i = 0; i < 9; i++) {
-        float x = COLOR_START_X + (i % 3) * (COLOR_SIZE + COLOR_SPACING); //calcule la position x de la couleur
-        float y = COLOR_START_Y + (i / 3) * (COLOR_SIZE + COLOR_SPACING); //calcule la position y de la couleur
+        float x = csx + (i % 3) * (50.0f + 10.0f); // position x: début grille + (colonne * (taille case + espacement))
+        float y = csy + (i / 3) * (50.0f + 10.0f); // position y: début grille + (ligne * (taille case + espacement))
         
-        bool isTaken = false; //vérifie si la couleur est prise
-        for (int takenColor : takenColors) {
-            if (takenColor == i) {
-                isTaken = true;
-                break;
-            }
+        bool isTaken = std::find(taken.begin(), taken.end(), i) != taken.end();
+        bool selected = gameState.getSelectedColor() == i;
+        
+        if (mouse.x >= x && mouse.x <= x + 50.0f && mouse.y >= y && mouse.y <= y + 50.0f) {
+            hovered = i;
         }
         
-        bool isSelected = gameState.getSelectedColor() == i; //vérifie si la couleur est sélectionnée
+        sf::Color color = GameState::PLAYERS_COLORS[i];
+        if (isTaken) color = sf::Color(color.r / 2, color.g / 2, color.b / 2); // assombrir la couleur si elle est déjà prise (diviser chaque composante par 2)
         
-        if (mousePos.x >= x && mousePos.x <= x + COLOR_SIZE && 
-            mousePos.y >= y && mousePos.y <= y + COLOR_SIZE) {
-            hoveredColorIndex = i; //définit l'index de la couleur survolée
-        }
-        
-        sf::Color color = GameState::PLAYERS_COLORS[i]; //récupère la couleur du joueur
-        if (isTaken) {
-            color = sf::Color(color.r / 2, color.g / 2, color.b / 2);
-        }
-        
-        sf::Color outlineColor = isSelected ? sf::Color::White : sf::Color(100, 100, 100);
-        if (hoveredColorIndex == i && !isTaken) {
-            outlineColor = sf::Color(200, 200, 200);
-        }
-        
-        Text::drawBox(window, x, y, COLOR_SIZE, COLOR_SIZE, color, outlineColor);
+        sf::Color outline = selected ? sf::Color::White : (hovered == i && !isTaken ? sf::Color(200, 200, 200) : sf::Color(100, 100, 100));
+        Text::drawBox(window, x, y, 50.0f, 50.0f, color, outline);
     }
-
-    if (hoveredColorIndex != -1) { //vérifie si une couleur est survolée
-        auto it = colorToPlayerName.find(hoveredColorIndex); //cherche le nom du joueur qui a la couleur survolée
-        if (it != colorToPlayerName.end()) {
-            float x = COLOR_START_X + (hoveredColorIndex % 3) * (COLOR_SIZE + COLOR_SPACING) + COLOR_SIZE / 2.0f; //calcule la position x de la couleur
-            float y = COLOR_START_Y + (hoveredColorIndex / 3) * (COLOR_SIZE + COLOR_SPACING) + COLOR_SIZE / 2.0f; //calcule la position y de la couleur
-            std::string tooltipText = "Player \"" + it->second + "\" already has this color !"; //crée le texte de la bulle d'aide
-            Tooltip::draw(window, tooltipText, x, y);
+    
+    if (hovered != -1) {
+        auto it = colorToName.find(hovered);
+        if (it != colorToName.end()) {
+            float x = csx + (hovered % 3) * (50.0f + 10.0f) + 50.0f / 2.0f; // position x du centre de la case: position case + moitié de la taille
+            float y = csy + (hovered / 3) * (50.0f + 10.0f) + 50.0f / 2.0f; // position y du centre de la case: position case + moitié de la taille
+            Tooltip::draw(window, "Player \"" + it->second + "\" already has this color !", x, y);
         }
     }
-
-    Text::draw(window, "Press Enter to confirm", 250, 520, 20); //affiche le texte
+    
+    sf::Text confirm = Text::createText("Press Enter to confirm", 20);
+    Element::centerH(confirm, static_cast<float>(ws.x), cy + 500.0f - 40.0f); // centré horizontalement, positionné en bas du conteneur avec marge
+    confirm.setFillColor(sf::Color::White);
+    window.draw(confirm);
 }
 
 bool EnteringUsername::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Event& event) {
-    if (event.type == sf::Event::TextEntered) { //vérifie si un texte est entré
+    if (event.type == sf::Event::TextEntered) {
         if (event.text.unicode == 8) {
-            std::string currentName = gameState.getUsername(); //récupère le nom d'utilisateur
-            if (!currentName.empty()) {
-                currentName.pop_back(); //supprime le dernier caractère du nom d'utilisateur
-                gameState.setUsername(currentName);
+            std::string name = gameState.getUsername();
+            if (!name.empty()) {
+                name.pop_back();
+                gameState.setUsername(name);
             }
         } else if (event.text.unicode >= 32 && event.text.unicode < 128) {
-            std::string currentName = gameState.getUsername();
-            if (currentName.length() < 20) {
-                currentName += static_cast<char>(event.text.unicode);
-                gameState.setUsername(currentName);
+            std::string name = gameState.getUsername();
+            if (name.length() < 20) {
+                name += static_cast<char>(event.text.unicode);
+                gameState.setUsername(name);
             }
         }
     }
 
-    if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) { //vérifie si un bouton de la souris est pressé
-        float mouseX = static_cast<float>(event.mouseButton.x); //récupère la position x de la souris
-        float mouseY = static_cast<float>(event.mouseButton.y); //récupère la position y de la souris
+    if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+        sf::Vector2u ws = window.getSize();
+        float mx = static_cast<float>(event.mouseButton.x);
+        float my = static_cast<float>(event.mouseButton.y);
         
-        int selectedLobbyId = gameState.getSelectedLobby(); //récupère l'id du lobby sélectionné
-        std::vector<int> takenColors;
-        if (selectedLobbyId != -1) {
-            const auto& lobbies = gameState.getLobbies(); //récupère la liste des lobbies
-            for (const auto& lobby : lobbies) {
-                if (lobby.lobbyId == selectedLobbyId) {
+        int lobbyId = gameState.getSelectedLobby();
+        std::vector<int> taken;
+        if (lobbyId != -1) {
+            for (const auto& lobby : gameState.getLobbies()) {
+                if (lobby.lobbyId == lobbyId) {
                     for (int i = 0; i < lobby.playerCount; i++) {
-                        takenColors.push_back(lobby.players[i].colorId); //ajoute la couleur prise par le joueur
+                        taken.push_back(lobby.players[i].colorId);
                     }
                     break;
                 }
             }
         }
         
+        float csx = (ws.x - (3 * 50.0f + 2 * 10.0f)) / 2.0f; // position x centrée de la grille: (largeur fenêtre - (3 cases * taille + 2 espacements)) / 2
+        float cy = (ws.y - 500.0f) / 2.0f; // position y centrée du conteneur: (hauteur fenêtre - hauteur conteneur) / 2
+        float csy = cy + 230.0f; // position y de la grille: début conteneur + offset vertical
+        
         for (int i = 0; i < 9; i++) {
-            float x = COLOR_START_X + (i % 3) * (COLOR_SIZE + COLOR_SPACING); //calcule la position x de la couleur
-            float y = COLOR_START_Y + (i / 3) * (COLOR_SIZE + COLOR_SPACING); //calcule la position y de la couleur
+            float x = csx + (i % 3) * (50.0f + 10.0f); // position x: début grille + (colonne * (taille case + espacement))
+            float y = csy + (i / 3) * (50.0f + 10.0f); // position y: début grille + (ligne * (taille case + espacement))
             
-            bool isTaken = false; //vérifie si la couleur est prise
-            for (int takenColor : takenColors) {
-                if (takenColor == i) {
-                    isTaken = true;
-                    break;
-                }
-            }
-            
-            if (mouseX >= x && mouseX <= x + COLOR_SIZE && mouseY >= y && mouseY <= y + COLOR_SIZE && !isTaken) {
-                gameState.setSelectedColor(i); //définit la couleur sélectionnée
+            bool isTaken = std::find(taken.begin(), taken.end(), i) != taken.end();
+            if (mx >= x && mx <= x + 50.0f && my >= y && my <= y + 50.0f && !isTaken) {
+                gameState.setSelectedColor(i);
                 return false;
             }
         }
     }
 
-    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Return) { //vérifie si une touche est pressée
+    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Return) {
         if (!gameState.getUsername().empty() && gameState.getSelectedColor() != -1) {
-            gameState.setState(ClientState::WAITING_FOR_RESPONSE); //passe à l'état d'attente de la réponse
+            gameState.setState(ClientState::WAITING_FOR_RESPONSE);
         }
     }
     return false;

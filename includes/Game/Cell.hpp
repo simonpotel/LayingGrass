@@ -1,9 +1,9 @@
 #pragma once
 
 enum class CellType {
-    EMPTY = -1,      // Cellule vide
-    GRASS = 0,       // Herbe (territoire d'un joueur)
-    STONE = 99,      // Pierre (obstacle)
+    EMPTY = -1,            // Cellule vide
+    GRASS = 0,             // Herbe (territoire d'un joueur)
+    STONE = 99,            // Pierre (obstacle)
     BONUS_EXCHANGE = 100,  // Bonus d'échange de tuile
     BONUS_STONE = 101,     // Bonus de pierre
     BONUS_ROBBERY = 102    // Bonus de vol

@@ -1,8 +1,9 @@
 #include "Render/utils/Board.hpp"
 #include "GameState.hpp"
 
-namespace Board {
-    void draw(sf::RenderWindow& window, const std::vector<std::vector<int>>& grid, int size, float x, float y, float cellSize) {
+namespace BoardRenderer {
+    void draw(sf::RenderWindow& window, const Board& board, float x, float y, float cellSize) {
+        int size = board.getSize();
         for (int i = 0; i < size; ++i) { // parcourt la grille
             for (int j = 0; j < size; ++j) {
                 float cellX = x + j * cellSize; // définit la position x de la cellule
@@ -11,7 +12,7 @@ namespace Board {
                 sf::RectangleShape cell(sf::Vector2f(cellSize - 2, cellSize - 2));
                 cell.setPosition(cellX + 1, cellY + 1); // définit la position de la cellule
                 
-                int cellValue = grid[i][j];
+                int cellValue = board.getCellValue(i, j);
                 if (cellValue == -1) { // si la cellule est vide
                     cell.setFillColor(sf::Color::White);
                 } else if (cellValue == 99) { // si la cellule est une pierre (STONE)
@@ -54,6 +55,33 @@ namespace Board {
         }
         
         return false; // si la cellule cliquée n'est pas sur le board
+    }
+
+    void drawPreview(sf::RenderWindow& window, const Tile& tile, float boardX, float boardY, float cellSize, int boardSize, int anchorRow, int anchorCol, bool canPlace, const sf::Color& playerColor) {
+        sf::Color fillColor = playerColor; // couleur de base
+        fillColor.a = canPlace ? 130 : 60; // ajuste l'opacité selon la validité
+
+        sf::Color outlineColor = canPlace ? sf::Color(70, 200, 90, 220) : sf::Color(220, 60, 60, 220); // couleur de contour
+
+        for (const auto& [blockRow, blockCol] : tile.blocks) {
+            int row = anchorRow + blockRow;
+            int col = anchorCol + blockCol;
+
+            if (row < 0 || row >= boardSize || col < 0 || col >= boardSize) {
+                continue; // saute les blocs hors plateau
+            }
+
+            float cellX = boardX + col * cellSize; // calcule la position x du bloc
+            float cellY = boardY + row * cellSize; // calcule la position y du bloc
+
+            sf::RectangleShape cell(sf::Vector2f(cellSize - 2, cellSize - 2));
+            cell.setPosition(cellX + 1, cellY + 1); // place le bloc sur le plateau
+            cell.setFillColor(fillColor); // applique la couleur de remplissage
+            cell.setOutlineColor(outlineColor); // applique la couleur du contour
+            cell.setOutlineThickness(1); // applique l'épaisseur du contour
+
+            window.draw(cell); // dessine le bloc de prévisualisation
+        }
     }
 }
 

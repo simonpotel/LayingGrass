@@ -1,6 +1,7 @@
 #include "Game/Game.hpp"
 #include "Game/Cell.hpp"
 #include "Game/Tile.hpp"
+#include "Game/PlacementRules.hpp"
 #include "Packet.hpp"
 #include <algorithm>
 #include <random>
@@ -129,51 +130,15 @@ bool Game::isFirstTurnForPlayer(int connection) const {
 }
 
 bool Game::canPlaceTile(int connection, int tileId, int anchorRow, int anchorCol) const {
-    const Tile& tile = Tile::getTile(Tile::fromInt(tileId));
-    if (!tile.isValid()) {
-        return false;
-    }
-    
     int colorId = getPlayerColorId(connection);
     if (colorId == -1) {
         return false;
     }
     
+    const Tile& tile = Tile::getTile(Tile::fromInt(tileId));
     bool isFirstTurn = isFirstTurnForPlayer(connection);
-    bool touchesOwnTerritory = false;
-    
-    // Vérifie chaque bloc de la tuile
-    for (const auto& [blockRow, blockCol] : tile.blocks) {
-        int actualRow = anchorRow + blockRow;
-        int actualCol = anchorCol + blockCol;
-        
-        // Vérifie que la position est dans les limites
-        if (!board.isValidPosition(actualRow, actualCol)) {
-            return false;
-        }
-        
-        // Vérifie que la cellule est vide
-        if (!board.isEmpty(actualRow, actualCol)) {
-            return false;
-        }
-        
-        // Vérifie qu'on ne touche pas le territoire d'un autre joueur
-        if (board.touchesOtherPlayerTerritory(actualRow, actualCol, colorId)) {
-            return false;
-        }
-        
-        // Pour les tours suivants (pas le premier), vérifie qu'au moins un bloc touche le territoire du joueur
-        if (!isFirstTurn && board.hasAdjacentPlayerCell(actualRow, actualCol, colorId)) {
-            touchesOwnTerritory = true;
-        }
-    }
-    
-    // Pour les tours suivants, au moins un bloc doit toucher le territoire du joueur
-    if (!isFirstTurn && !touchesOwnTerritory) {
-        return false;
-    }
-    
-    return true;
+
+    return PlacementRules::canPlaceTile(board, tile, anchorRow, anchorCol, colorId, isFirstTurn);
 }
 
 bool Game::placeTile(int connection, int tileId, int anchorRow, int anchorCol) {

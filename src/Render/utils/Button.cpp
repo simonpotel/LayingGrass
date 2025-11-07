@@ -1,5 +1,6 @@
 #include "Render/utils/Button.hpp"
 #include "Render/utils/Text.hpp"
+#include "Render/utils/Element.hpp"
 #include <iostream>
 #include <algorithm>
 
@@ -79,11 +80,6 @@ void Button::updateSpriteSize() {
 }
 
 void Button::updateTextPosition() {
-    sf::FloatRect textBounds = text.getLocalBounds();
-    
-    float textX = posX + (width - textBounds.width) / 2.0f - textBounds.left;
-    float textY = posY + (height - textBounds.height) / 2.0f - textBounds.top;
-    
-    text.setPosition(textX, textY);
+    Element::centerInContainer(text, posX, posY, width, height); // centre le texte dans le bouton
 }
 

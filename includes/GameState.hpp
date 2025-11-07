@@ -2,6 +2,7 @@
 #define GAMESTATE_HPP
 
 #include "Packet.hpp"
+#include "Game/Board.hpp"
 #include <vector>
 #include <string>
 
@@ -59,8 +60,7 @@ public:
 
     // gestion du board
     void updateBoard(const BoardUpdatePacket& packet);
-    const std::vector<std::vector<int>>& getBoard() const { return board; }
-    int getBoardSize() const { return boardSize; }
+    const Board& getBoard() const { return board; }
     int getCurrentTurnColorId() const { return currentTurnColorId; }
     int getTurnCount() const { return turnCount; }
     bool isGameOver() const { return gameOver; }
@@ -88,8 +88,7 @@ private:
     int selectedColorId; // identifiant de la couleur sélectionnée (-1 si aucune)
     bool requestSent; // true si la requête de connexion a été envoyée
     
-    std::vector<std::vector<int>> board; // grille du jeu
-    int boardSize; // taille de la grille
+    Board board; // grille du jeu
     int currentTurnColorId; // couleur du joueur dont c'est le tour
     int turnCount; // nombre de tours effectués
     bool gameOver; // true si la partie est terminée

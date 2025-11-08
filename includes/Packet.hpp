@@ -65,6 +65,9 @@ struct CellClickPacket {
     int lobbyId; // identifiant du lobby
     int row; // ligne de la cellule cliquée
     int col; // colonne de la cellule cliquée
+    int rotation; // rotation de la tuile (0-3 pour 0°, 90°, 180°, 270°)
+    bool flippedH; // flip horizontal de la tuile
+    bool flippedV; // flip vertical de la tuile
 };
 
 struct BoardUpdatePacket {

@@ -15,6 +15,28 @@ extern Client* g_client;
 namespace {
     int s_hoverRow = -1; // ligne du plateau survolée par la souris
     int s_hoverCol = -1; // colonne du plateau survolée par la souris
+    
+    // applique les transformations à une tuile
+    Tile applyTileTransform(const Tile& baseTile, int rotation, bool flippedH, bool flippedV) {
+        Tile result = baseTile;
+        
+        // applique les rotations (0-3 fois 90°)
+        for (int i = 0; i < rotation; ++i) {
+            result = result.rotate90();
+        }
+        
+        // applique le flip horizontal si nécessaire
+        if (flippedH) {
+            result = result.flipHorizontal();
+        }
+        
+        // applique le flip vertical si nécessaire
+        if (flippedV) {
+            result = result.flipVertical();
+        }
+        
+        return result;
+    }
 }
 
 void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
@@ -80,8 +102,11 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     if (!gameState.isGameOver() && turnId == myId) {
         int tileId = gameState.getCurrentPlayerTileId();
         if (tileId >= 0 && tileId < static_cast<int>(TileId::TOTAL_TILES)) {
-            const Tile& tile = Tile::getTile(Tile::fromInt(tileId));
-            if (tile.isValid()) {
+            const Tile& baseTile = Tile::getTile(Tile::fromInt(tileId));
+            if (baseTile.isValid()) {
+                // applique les transformations
+                Tile tile = applyTileTransform(baseTile, gameState.getTileRotation(), gameState.getTileFlippedH(), gameState.getTileFlippedV());
+                
                 // calcul des dimensions de la tuile (min/max des coordonnées)
                 int minR = 0, maxR = 0, minC = 0, maxC = 0;
                 for (const auto& [r, c] : tile.blocks) {
@@ -132,8 +157,10 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     if (!gameState.isGameOver() && turnId == myId) {
         int tileId = gameState.getCurrentPlayerTileId();
         if (tileId >= 0 && tileId < static_cast<int>(TileId::TOTAL_TILES)) {
-            const Tile& tile = Tile::getTile(Tile::fromInt(tileId));
-            if (tile.isValid() && s_hoverRow >= 0 && s_hoverCol >= 0) {
+            const Tile& baseTile = Tile::getTile(Tile::fromInt(tileId));
+            if (baseTile.isValid() && s_hoverRow >= 0 && s_hoverCol >= 0) {
+                // applique les transformations pour la prévisualisation
+                Tile tile = applyTileTransform(baseTile, gameState.getTileRotation(), gameState.getTileFlippedH(), gameState.getTileFlippedV());
                 bool firstTurn = !PlacementRules::playerHasCells(board, myId);
                 bool canPlace = PlacementRules::canPlaceTile(board, tile, s_hoverRow, s_hoverCol, myId, firstTurn);
                 BoardRenderer::drawPreview(window, tile, bx, by, 18.0f, bs, s_hoverRow, s_hoverCol, canPlace, GameState::PLAYERS_COLORS[myId]);
@@ -142,7 +169,11 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     }
     
     // aide
-    sf::Text help = Text::createText("Press Tab to view all tiles", 16);
+    std::string helpText = "Press Tab to view all tiles";
+    if (!gameState.isGameOver() && turnId == myId) {
+        helpText += " | R: Rotate | F: Flip H | V: Flip V";
+    }
+    sf::Text help = Text::createText(helpText, 16);
     Element::centerH(help, static_cast<float>(ws.x), static_cast<float>(ws.y) - 30);
     help.setFillColor(sf::Color(150, 150, 150));
     window.draw(help);
@@ -152,6 +183,24 @@ bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Eve
     if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Tab) {
         gameState.setState(ClientState::VIEWING_TILES);
         return false;
+    }
+    
+    // gestion des transformations de tuile (seulement si c'est notre tour)
+    if (event.type == sf::Event::KeyPressed && !gameState.isGameOver()) {
+        int turnId = gameState.getCurrentTurnColorId();
+        int myId = gameState.getSelectedColor();
+        if (turnId == myId) {
+            if (event.key.code == sf::Keyboard::R) {
+                // rotation 90°
+                gameState.setTileRotation(gameState.getTileRotation() + 1);
+            } else if (event.key.code == sf::Keyboard::F) {
+                // flip horizontal
+                gameState.setTileFlippedH(!gameState.getTileFlippedH());
+            } else if (event.key.code == sf::Keyboard::V) {
+                // flip vertical
+                gameState.setTileFlippedV(!gameState.getTileFlippedV());
+            }
+        }
     }
     
     sf::Vector2u ws = window.getSize();
@@ -182,7 +231,8 @@ bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Eve
         int row, col;
         if (BoardRenderer::handleClick(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y), bx, by, 18.0f, bs, row, col)) {
             if (g_client) {
-                g_client->sendCellClick(gameState.getCurrentLobby(), row, col);
+                g_client->sendCellClick(gameState.getCurrentLobby(), row, col, 
+                    gameState.getTileRotation(), gameState.getTileFlippedH(), gameState.getTileFlippedV());
             }
         }
     }

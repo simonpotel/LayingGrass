@@ -69,6 +69,15 @@ public:
     // gestion de la tuile actuelle
     int getCurrentPlayerTileId() const { return currentPlayerTileId; }
     
+    // gestion des transformations de tuile
+    int getTileRotation() const { return tileRotation; }
+    void setTileRotation(int rotation) { tileRotation = rotation % 4; }
+    bool getTileFlippedH() const { return tileFlippedH; }
+    void setTileFlippedH(bool flipped) { tileFlippedH = flipped; }
+    bool getTileFlippedV() const { return tileFlippedV; }
+    void setTileFlippedV(bool flipped) { tileFlippedV = flipped; }
+    void resetTileTransform();
+    
     void resetGameData();
     
     // gestion du winnerId du GameEnd
@@ -94,6 +103,9 @@ private:
     bool gameOver; // true si la partie est terminée
     int winnerId; // identifiant de la couleur du gagnant
     int currentPlayerTileId; // ID de la tuile du joueur actif (-1 si aucune)
+    int tileRotation; // rotation de la tuile (0-3 pour 0°, 90°, 180°, 270°)
+    bool tileFlippedH; // flip horizontal de la tuile
+    bool tileFlippedV; // flip vertical de la tuile
     int gameEndWinnerId; // identifiant de la couleur du gagnant stocké pour l'affichage GameEnd
     int gameEndLobbyId; // identifiant du lobby stocké pour l'affichage GameEnd
     std::string gameEndWinnerName; // nom du joueur gagnant stocké pour l'affichage GameEnd

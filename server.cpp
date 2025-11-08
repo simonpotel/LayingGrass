@@ -104,7 +104,8 @@ void handleCellClick(Player* player, const void* data, size_t size) {
         return;
     }
     
-    game->handleCellClick(player->connection, packet->row, packet->col);
+    game->handleCellClick(player->connection, packet->row, packet->col, 
+        packet->rotation, packet->flippedH, packet->flippedV);
 }
 
 int main() {

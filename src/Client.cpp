@@ -65,12 +65,15 @@ bool Client::sendConnectRequest(const char* playerName, int lobbyId, int colorId
     return Packet::sendPacket(socketFd, PacketType::CONNECT_REQUEST, &packet, sizeof(ConnectRequestPacket)); // envoie la demande de connexion au serveur
 }
 
-bool Client::sendCellClick(int lobbyId, int row, int col) {
+bool Client::sendCellClick(int lobbyId, int row, int col, int rotation, bool flippedH, bool flippedV) {
     CellClickPacket packet; // structure pour le clic sur une cellule
     memset(&packet, 0, sizeof(packet)); // initialise la structure à 0
     packet.lobbyId = lobbyId; // définit l'identifiant du lobby
     packet.row = row; // définit la ligne
     packet.col = col; // définit la colonne
+    packet.rotation = rotation; // définit la rotation
+    packet.flippedH = flippedH; // définit le flip horizontal
+    packet.flippedV = flippedV; // définit le flip vertical
 
     return Packet::sendPacket(socketFd, PacketType::CELL_CLICK, &packet, sizeof(CellClickPacket)); // envoie le clic au serveur
 }

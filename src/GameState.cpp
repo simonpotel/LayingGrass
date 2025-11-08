@@ -30,6 +30,9 @@ GameState::GameState()
       gameOver(false),
       winnerId(-1),
       currentPlayerTileId(-1),
+      tileRotation(0),
+      tileFlippedH(false),
+      tileFlippedV(false),
       gameEndWinnerId(-1),
       gameEndLobbyId(-1) {
 }
@@ -65,11 +68,23 @@ void GameState::updateBoard(const BoardUpdatePacket& packet) {
         }
     }
     
+    // réinitialise la transformation si la tuile change
+    int oldTileId = currentPlayerTileId;
     currentTurnColorId = packet.currentTurnColorId;
     turnCount = packet.turnCount;
     gameOver = packet.gameOver;
     winnerId = packet.winnerId;
     currentPlayerTileId = packet.currentPlayerTileId;
+    
+    if (oldTileId != currentPlayerTileId) {
+        resetTileTransform();
+    }
+}
+
+void GameState::resetTileTransform() {
+    tileRotation = 0;
+    tileFlippedH = false;
+    tileFlippedV = false;
 }
 
 void GameState::resetGameData() {
@@ -80,4 +95,5 @@ void GameState::resetGameData() {
     gameOver = false;
     winnerId = -1;
     currentPlayerTileId = -1;
+    resetTileTransform();
 }

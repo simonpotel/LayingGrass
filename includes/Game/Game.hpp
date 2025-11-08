@@ -13,7 +13,7 @@ public:
     ~Game();
     
     void update(); // met à jour le jeu
-    void handleCellClick(int connection, int row, int col); // gère le clic sur une cellule (paquet de type CELL_CLICK)
+    void handleCellClick(int connection, int row, int col, int rotation, bool flippedH, bool flippedV); // gère le clic sur une cellule avec transformations
     bool isGameOver() const { return turnCount >= 9; } // retourne true si la partie est terminée
     int getWinner() const { return winnerId; } // retourne l'identifiant de la couleur du gagnant
     int getCurrentPlayerConnection() const; // retourne le descripteur de socket du joueur dont c'est le tour

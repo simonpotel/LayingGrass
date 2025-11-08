@@ -17,7 +17,7 @@ public:
 
     // packets
     bool sendConnectRequest(const char* playerName, int lobbyId, int colorId); // envoie une demande de connexion au serveur avec lobby et couleur
-    bool sendCellClick(int lobbyId, int row, int col); // envoie un clic sur une cellule
+    bool sendCellClick(int lobbyId, int row, int col, int rotation, bool flippedH, bool flippedV); // envoie un clic sur une cellule avec transformations
     void startReceiving(); // démarre le thread de réception des paquets
     void stopReceiving(); // arrête le thread de réception des paquets
 

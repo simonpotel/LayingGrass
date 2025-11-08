@@ -53,7 +53,7 @@ void Game::update() {
     broadcastBoardUpdate(); // envoie le paquet de mise à jour de la grille à tous les joueurs du lobby
 }
 
-void Game::handleCellClick(int connection, int row, int col) {
+void Game::handleCellClick(int connection, int row, int col, int rotation, bool flippedH, bool flippedV) {
     if (isGameOver()) { // si la partie est terminée
         return; // on ne fait rien
     }
@@ -74,24 +74,52 @@ void Game::handleCellClick(int connection, int row, int col) {
         return;
     }
     
-    // Le clic (row, col) représente où le joueur veut placer la tuile
-    // On considère que c'est le point d'ancrage (premier bloc de la tuile)
-    // Essaye de placer la tuile à cette position
-    if (placeTile(connection, tileId, row, col)) {
-        // Placement réussi
-        playerTiles[connection] = -1; // Retire la tuile du joueur après placement
-        playerTurnsPlayed[connection]++;
-        turnCount++; // incrémente le nombre de tours
-        
-        if (isGameOver()) { // si la partie est terminée
-            endGame(); // termine la partie
-        } else { 
-            nextTurn(); // passe au joueur suivant et distribue une nouvelle tuile
-        }
-        
-        broadcastBoardUpdate(); // envoie le paquet de mise à jour de la grille à tous les joueurs du lobby
+    // applique les transformations à la tuile
+    const Tile& baseTile = Tile::getTile(Tile::fromInt(tileId));
+    Tile transformedTile = baseTile;
+    
+    // applique les rotations (0-3 fois 90°)
+    for (int i = 0; i < rotation; ++i) {
+        transformedTile = transformedTile.rotate90();
     }
-    // Si le placement échoue, on ne fait rien (le joueur peut réessayer)
+    
+    // applique le flip horizontal si nécessaire
+    if (flippedH) {
+        transformedTile = transformedTile.flipHorizontal();
+    }
+    
+    // applique le flip vertical si nécessaire
+    if (flippedV) {
+        transformedTile = transformedTile.flipVertical();
+    }
+    
+    // vérifie si la tuile transformée peut être placée
+    bool isFirstTurn = isFirstTurnForPlayer(connection);
+    if (!PlacementRules::canPlaceTile(board, transformedTile, row, col, colorId, isFirstTurn)) {
+        return; // placement invalide
+    }
+    
+    // place la tuile transformée
+    for (const auto& [blockRow, blockCol] : transformedTile.blocks) {
+        int actualRow = row + blockRow;
+        int actualCol = col + blockCol;
+        
+        // place la cellule avec la couleur du joueur
+        board.setCell(actualRow, actualCol, Cell(colorId));
+    }
+    
+    // placement réussi
+    playerTiles[connection] = -1; // retire la tuile du joueur après placement
+    playerTurnsPlayed[connection]++;
+    turnCount++; // incrémente le nombre de tours
+    
+    if (isGameOver()) { // si la partie est terminée
+        endGame(); // termine la partie
+    } else { 
+        nextTurn(); // passe au joueur suivant et distribue une nouvelle tuile
+    }
+    
+    broadcastBoardUpdate(); // envoie le paquet de mise à jour de la grille à tous les joueurs du lobby
 }
 
 void Game::nextTurn() {

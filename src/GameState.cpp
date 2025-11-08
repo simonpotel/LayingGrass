@@ -41,6 +41,8 @@ GameState::~GameState() {
 }
 
 void GameState::updateLobbies(const LobbyListPacket& packet) {
+    std::lock_guard<std::mutex> lock(lobbiesMutex); 
+    
     lobbies.clear();
 
     for (int i = 0; i < packet.lobbyCount; ++i) {
@@ -96,4 +98,9 @@ void GameState::resetGameData() {
     winnerId = -1;
     currentPlayerTileId = -1;
     resetTileTransform();
+}
+
+std::vector<LobbyInfo> GameState::getLobbies() const {
+    std::lock_guard<std::mutex> lock(lobbiesMutex);
+    return lobbies;
 }

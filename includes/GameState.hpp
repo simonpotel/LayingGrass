@@ -5,6 +5,7 @@
 #include "Game/Board.hpp"
 #include <vector>
 #include <string>
+#include <mutex>
 
 namespace sf {
     class Color;
@@ -36,7 +37,7 @@ public:
 
     // gestion des lobbies
     void updateLobbies(const LobbyListPacket& packet);
-    const std::vector<LobbyInfo>& getLobbies() const { return lobbies; }
+    std::vector<LobbyInfo> getLobbies() const;
 
     // sélection du lobby
     void setSelectedLobby(int lobbyId) { selectedLobbyId = lobbyId; }
@@ -91,6 +92,7 @@ public:
 private:
     ClientState currentState; // état actuel du client
     std::vector<LobbyInfo> lobbies; // liste des lobbies disponibles
+    mutable std::mutex lobbiesMutex; // mutex pour protéger l'accès aux lobbies
     int selectedLobbyId; // identifiant du lobby sélectionné
     int currentLobbyId; // identifiant du lobby actuel (quand connecté)
     std::string username; // nom d'utilisateur saisi

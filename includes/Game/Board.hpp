@@ -24,6 +24,7 @@ public:
     bool isValidPosition(int row, int col) const; // coordonnées dans les bornes du plateau
     bool hasAdjacentPlayerCell(int row, int col, int playerId) const; // adjacence orthogonale au territoire du joueur
     bool touchesOtherPlayerTerritory(int row, int col, int playerId) const; // touche le territoire d'un autre joueur
+    bool isBonus(int row, int col) const; // true si la cellule contient un bonus
     
     std::vector<std::vector<Cell>> grid; // grille 2D de cellules
     int size; // dimension du plateau (size x size)

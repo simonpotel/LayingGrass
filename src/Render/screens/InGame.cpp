@@ -92,6 +92,26 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
         window.draw(turnInfo);
     }
     
+    ss.str("");
+    ss << "Coupons: " << gameState.getExchangeCouponCount();
+    sf::Text couponsText = Text::createText(ss.str(), 18);
+    couponsText.setPosition(ix + 20.0f, iy + 20.0f + 105);
+    couponsText.setFillColor(gameState.getExchangeCouponCount() > 0 ? Theme::FOREST_GREEN : sf::Color(180, 180, 180));
+    window.draw(couponsText);
+
+    if (gameState.isGameOver() && gameState.getWinnerId() < 0) {
+        std::string promptText;
+        if (gameState.getExchangeCouponCount() > 0) {
+            promptText = "Press C to place 1x1 or N to skip coupon";
+        } else {
+            promptText = "Waiting for other players to finish coupons...";
+        }
+        sf::Text prompt = Text::createText(promptText, 16);
+        prompt.setPosition(ix + 20.0f, iy + 20.0f + 135);
+        prompt.setFillColor(sf::Color(200, 200, 200));
+        window.draw(prompt);
+    }
+    
     // panneau tuile droite
     float tx = bx + boardSize + 30.0f; // position x: position plateau + taille plateau + espacement
     float ty = by; // position y: aligné avec le plateau
@@ -172,6 +192,9 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     std::string helpText = "Press Tab to view all tiles";
     if (!gameState.isGameOver() && turnId == myId) {
         helpText += " | R: Rotate | F: Flip H | V: Flip V";
+        helpText += " | C: Swap coupon";
+    } else if (gameState.isGameOver() && gameState.getExchangeCouponCount() > 0) {
+        helpText += " | C: Place coupon | N: Skip";
     }
     sf::Text help = Text::createText(helpText, 16);
     Element::centerH(help, static_cast<float>(ws.x), static_cast<float>(ws.y) - 30);
@@ -185,20 +208,39 @@ bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Eve
         return false;
     }
     
-    // gestion des transformations de tuile (seulement si c'est notre tour)
-    if (event.type == sf::Event::KeyPressed && !gameState.isGameOver()) {
-        int turnId = gameState.getCurrentTurnColorId();
-        int myId = gameState.getSelectedColor();
-        if (turnId == myId) {
-            if (event.key.code == sf::Keyboard::R) {
-                // rotation 90°
-                gameState.setTileRotation(gameState.getTileRotation() + 1);
-            } else if (event.key.code == sf::Keyboard::F) {
-                // flip horizontal
-                gameState.setTileFlippedH(!gameState.getTileFlippedH());
-            } else if (event.key.code == sf::Keyboard::V) {
-                // flip vertical
-                gameState.setTileFlippedV(!gameState.getTileFlippedV());
+    if (event.type == sf::Event::KeyPressed) {
+        if (!gameState.isGameOver()) {
+            // gestion des transformations ou échange pendant la partie
+            int turnId = gameState.getCurrentTurnColorId();
+            int myId = gameState.getSelectedColor();
+            if (turnId == myId) {
+                if (event.key.code == sf::Keyboard::R) {
+                    gameState.setTileRotation(gameState.getTileRotation() + 1);
+                } else if (event.key.code == sf::Keyboard::F) {
+                    gameState.setTileFlippedH(!gameState.getTileFlippedH());
+                } else if (event.key.code == sf::Keyboard::V) {
+                    gameState.setTileFlippedV(!gameState.getTileFlippedV());
+                } else if (event.key.code == sf::Keyboard::C) {
+                    if (gameState.getExchangeCouponCount() > 0 && g_client) {
+                        g_client->sendCellClick(gameState.getCurrentLobby(), -1, -1, 0, false, false, true);
+                    }
+                }
+            }
+        } else {
+            // phase finale : placement/skip des coupons restants
+            if (event.key.code == sf::Keyboard::C) {
+                if (gameState.getExchangeCouponCount() > 0 && g_client) {
+                    if (s_hoverRow >= 0 && s_hoverCol >= 0) {
+                        const Board& board = gameState.getBoard();
+                        if (board.isValidPosition(s_hoverRow, s_hoverCol) && board.isEmpty(s_hoverRow, s_hoverCol)) {
+                            g_client->sendCellClick(gameState.getCurrentLobby(), s_hoverRow, s_hoverCol, 0, false, false, true);
+                        }
+                    }
+                }
+            } else if (event.key.code == sf::Keyboard::N) {
+                if (gameState.getExchangeCouponCount() > 0 && g_client) {
+                    g_client->sendCellClick(gameState.getCurrentLobby(), -1, -1, 0, false, false, true);
+                }
             }
         }
     }
@@ -232,7 +274,7 @@ bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Eve
         if (BoardRenderer::handleClick(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y), bx, by, 18.0f, bs, row, col)) {
             if (g_client) {
                 g_client->sendCellClick(gameState.getCurrentLobby(), row, col, 
-                    gameState.getTileRotation(), gameState.getTileFlippedH(), gameState.getTileFlippedV());
+                    gameState.getTileRotation(), gameState.getTileFlippedH(), gameState.getTileFlippedV(), false);
             }
         }
     }

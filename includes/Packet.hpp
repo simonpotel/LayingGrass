@@ -61,15 +61,6 @@ struct GameEndPacket {
     char winnerName[256]; // nom du joueur gagnant
 };
 
-struct CellClickPacket {
-    int lobbyId; // identifiant du lobby
-    int row; // ligne de la cellule cliquée
-    int col; // colonne de la cellule cliquée
-    int rotation; // rotation de la tuile (0-3 pour 0°, 90°, 180°, 270°)
-    bool flippedH; // flip horizontal de la tuile
-    bool flippedV; // flip vertical de la tuile
-};
-
 struct BoardUpdatePacket {
     int lobbyId; // identifiant du lobby
     int size; // taille de la grille (20 ou 30)
@@ -79,6 +70,17 @@ struct BoardUpdatePacket {
     bool gameOver; // true si la partie est terminée
     int winnerId; // identifiant de la couleur du gagnant (-1 si pas de gagnant)
     int currentPlayerTileId; // ID de la tuile du joueur dont c'est le tour (-1 si aucune tuile)
+    int exchangeCoupons[9]; // coupons d'échange par couleur
+};
+
+struct CellClickPacket {
+    int lobbyId; // identifiant du lobby
+    int row; // ligne de la cellule cliquée
+    int col; // colonne de la cellule cliquée
+    int rotation; // rotation de la tuile (0-3 pour 0°, 90°, 180°, 270°)
+    bool flippedH; // flip horizontal de la tuile
+    bool flippedV; // flip vertical de la tuile
+    bool useCoupon; // true si on souhaite utiliser un coupon
 };
 
 namespace Packet {

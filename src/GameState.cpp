@@ -34,7 +34,8 @@ GameState::GameState()
       tileFlippedH(false),
       tileFlippedV(false),
       gameEndWinnerId(-1),
-      gameEndLobbyId(-1) {
+      gameEndLobbyId(-1),
+      exchangeCouponCount(0) {
 }
 
 GameState::~GameState() {
@@ -77,6 +78,11 @@ void GameState::updateBoard(const BoardUpdatePacket& packet) {
     gameOver = packet.gameOver;
     winnerId = packet.winnerId;
     currentPlayerTileId = packet.currentPlayerTileId;
+    if (selectedColorId >= 0 && selectedColorId < 9) {
+        exchangeCouponCount = packet.exchangeCoupons[selectedColorId];
+    } else {
+        exchangeCouponCount = 0;
+    }
     
     if (oldTileId != currentPlayerTileId) {
         resetTileTransform();
@@ -98,6 +104,7 @@ void GameState::resetGameData() {
     winnerId = -1;
     currentPlayerTileId = -1;
     resetTileTransform();
+    exchangeCouponCount = 0;
 }
 
 std::vector<LobbyInfo> GameState::getLobbies() const {

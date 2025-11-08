@@ -93,4 +93,8 @@ bool Board::touchesOtherPlayerTerritory(int row, int col, int playerId) const {
     return false;
 }
 
+bool Board::isBonus(int row, int col) const {
+    return getCell(row, col).isBonus();
+}
+
 

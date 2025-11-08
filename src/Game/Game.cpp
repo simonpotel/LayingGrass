@@ -5,13 +5,16 @@
 #include "Packet.hpp"
 #include <algorithm>
 #include <random>
+#include <cmath>
+#include <numeric>
 #include <thread>
 #include <chrono>
 #include <cstring>
 
 Game::Game(int lobbyId, Lobby* lobby)
-    : lobbyId(lobbyId), lobby(lobby), board(20), currentTurnIndex(0), turnCount(0), winnerId(-1), rng(std::random_device{}()) {
+    : lobbyId(lobbyId), lobby(lobby), board(20), currentTurnIndex(0), turnCount(0), winnerId(-1), rng(std::random_device{}()), awaitingFinalCoupons(false) {
     initializePlayers();
+    placeExchangeCoupons();
     
     int firstPlayer = getCurrentPlayerConnection();
     if (firstPlayer != -1) {
@@ -29,6 +32,7 @@ void Game::initializePlayers() {
             playerConnections.push_back(conn); // ajoute la connexion au joueur
             playerTurnsPlayed[conn] = 0; // initialise le nombre de tours joués à 0
             playerTiles[conn] = -1; // aucune tuile pour l'instant
+            playerExchangeCoupons[conn] = 0; // aucun coupon au départ
         }
     }
     
@@ -53,7 +57,29 @@ void Game::update() {
     broadcastBoardUpdate(); // envoie le paquet de mise à jour de la grille à tous les joueurs du lobby
 }
 
-void Game::handleCellClick(int connection, int row, int col, int rotation, bool flippedH, bool flippedV) {
+void Game::handleCellClick(int connection, int row, int col, int rotation, bool flippedH, bool flippedV, bool useCoupon) {
+    if (useCoupon) {
+        int currentPlayerConn = getCurrentPlayerConnection();
+        if (!isGameOver()) {
+            if (connection != currentPlayerConn) {
+                return;
+            }
+            if (getExchangeCouponCount(connection) <= 0) {
+                return;
+            }
+
+            playerExchangeCoupons[connection] = std::max(0, playerExchangeCoupons[connection] - 1);
+            giveTileToPlayer(connection, true);
+            broadcastBoardUpdate();
+            return;
+        }
+
+        if (useExchangeCoupon(connection, row, col)) {
+            finalizeWinnerIfReady();
+        }
+        return;
+    }
+
     if (isGameOver()) { // si la partie est terminée
         return; // on ne fait rien
     }
@@ -104,6 +130,11 @@ void Game::handleCellClick(int connection, int row, int col, int rotation, bool 
         int actualRow = row + blockRow;
         int actualCol = col + blockCol;
         
+        const Cell& currentCell = board.getCell(actualRow, actualCol);
+        if (currentCell.isBonus()) {
+            addExchangeCoupon(connection);
+        }
+
         // place la cellule avec la couleur du joueur
         board.setCell(actualRow, actualCol, Cell(colorId));
     }
@@ -132,13 +163,62 @@ void Game::nextTurn() {
     }
 }
 
-void Game::giveTileToPlayer(int connection) {
-    if (isFirstTurnForPlayer(connection)) {
+void Game::giveTileToPlayer(int connection, bool forceRandom) {
+    if (isFirstTurnForPlayer(connection) && !forceRandom) {
         playerTiles[connection] = static_cast<int>(TileId::TILE_0);
     } else {
         std::uniform_int_distribution<int> tileDist(0, static_cast<int>(TileId::TOTAL_TILES) - 1);
         playerTiles[connection] = tileDist(rng);
     }
+}
+
+void Game::placeExchangeCoupons() {
+    int size = board.getSize();
+    size_t playerCount = std::max<size_t>(1, playerConnections.size());
+    int couponsToPlace = static_cast<int>(std::ceil(playerCount * 1.5));
+    couponsToPlace = std::min<int>(couponsToPlace, size * size);
+
+    if (couponsToPlace <= 0) {
+        return;
+    }
+
+    std::vector<int> positions(size * size);
+    std::iota(positions.begin(), positions.end(), 0);
+    std::shuffle(positions.begin(), positions.end(), rng);
+
+    for (int i = 0; i < couponsToPlace; ++i) {
+        int index = positions[i];
+        int row = index / size;
+        int col = index % size;
+
+        if (row >= 0 && row < size && col >= 0 && col < size) {
+            board.setCell(row, col, Cell(CellType::BONUS_EXCHANGE));
+        }
+    }
+}
+
+bool Game::useExchangeCoupon(int connection, int row, int col) {
+    if (playerExchangeCoupons[connection] <= 0) {
+        return false;
+    }
+
+    if (row < 0 || col < 0) {
+        playerExchangeCoupons[connection] = 0;
+        return true;
+    }
+
+    if (!board.isValidPosition(row, col) || !board.isEmpty(row, col)) {
+        return false;
+    }
+
+    int colorId = getPlayerColorId(connection);
+    if (colorId == -1) {
+        return false;
+    }
+
+    board.setCell(row, col, Cell(colorId));
+    playerExchangeCoupons[connection]--;
+    return true;
 }
 
 int Game::getCurrentPlayerTileId(int connection) const {
@@ -155,6 +235,21 @@ bool Game::isFirstTurnForPlayer(int connection) const {
         return it->second == 0; // Premier tour si aucun tour joué
     }
     return true; // Si pas trouvé, on considère que c'est le premier tour
+}
+
+void Game::addExchangeCoupon(int connection, int count) {
+    if (count <= 0) {
+        return;
+    }
+    playerExchangeCoupons[connection] += count;
+}
+
+int Game::getExchangeCouponCount(int connection) const {
+    auto it = playerExchangeCoupons.find(connection);
+    if (it != playerExchangeCoupons.end()) {
+        return it->second;
+    }
+    return 0;
 }
 
 bool Game::canPlaceTile(int connection, int tileId, int anchorRow, int anchorCol) const {
@@ -199,28 +294,13 @@ void Game::endGame() {
         return;
     }
     
-    int bestTerritory = -1;
-    int bestPlayerColor = -1;
-    bool tie = false;
-
-    for (int conn : playerConnections) {
-        int colorId = getPlayerColorId(conn);
-        if (colorId == -1) {
-            continue;
-        }
-
-        int territory = getPlayerTerritoryCount(colorId);
-
-        if (territory > bestTerritory) {
-            bestTerritory = territory;
-            bestPlayerColor = colorId;
-            tie = false;
-        } else if (territory == bestTerritory && bestTerritory != -1) {
-            tie = true;
-        }
+    if (hasRemainingCoupons()) {
+        awaitingFinalCoupons = true;
+        return;
     }
 
-    winnerId = tie ? -1 : bestPlayerColor;
+    computeWinner();
+    awaitingFinalCoupons = false;
 }
 
 int Game::getCurrentPlayerConnection() const {
@@ -242,6 +322,15 @@ void Game::broadcastBoardUpdate() {
     
     // Récupère la tuile du joueur actif
     packet.currentPlayerTileId = getCurrentPlayerTileId(currentPlayerConn);
+    for (int i = 0; i < 9; ++i) {
+        packet.exchangeCoupons[i] = 0;
+    }
+    for (int conn : playerConnections) {
+        int color = getPlayerColorId(conn);
+        if (color >= 0 && color < 9) {
+            packet.exchangeCoupons[color] = getExchangeCouponCount(conn);
+        }
+    }
     
     packet.turnCount = turnCount; // définit le nombre de tours
     packet.gameOver = isGameOver(); // définit si la partie est terminée
@@ -307,5 +396,55 @@ int Game::getPlayerLargestSquare(int playerId) const {
     }
     
     return maxSquare;
+}
+
+bool Game::hasRemainingCoupons() const {
+    for (const auto& entry : playerExchangeCoupons) {
+        if (entry.second > 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void Game::computeWinner() {
+    int bestTerritory = -1;
+    int bestPlayerColor = -1;
+    int tieCount = 0;
+
+    for (int conn : playerConnections) {
+        int colorId = getPlayerColorId(conn);
+        if (colorId == -1) {
+            continue;
+        }
+
+        int territory = getPlayerTerritoryCount(colorId);
+        territory += getExchangeCouponCount(conn);
+
+        if (territory > bestTerritory) {
+            bestTerritory = territory;
+            bestPlayerColor = colorId;
+            tieCount = 1;
+        } else if (territory == bestTerritory && bestTerritory != -1) {
+            tieCount++;
+        }
+    }
+
+    winnerId = (tieCount == 1) ? bestPlayerColor : -1;
+}
+
+void Game::finalizeWinnerIfReady() {
+    if (!awaitingFinalCoupons && hasRemainingCoupons()) {
+        awaitingFinalCoupons = true;
+    }
+
+    if (awaitingFinalCoupons) {
+        if (!hasRemainingCoupons()) {
+            awaitingFinalCoupons = false;
+            computeWinner();
+        }
+    }
+
+    broadcastBoardUpdate();
 }
 

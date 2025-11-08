@@ -205,6 +205,10 @@ void Server::gameUpdateLoop() {
                 game->update(); // met à jour le jeu
                 
                 if (game->isGameOver()) { // si la partie est terminée
+                    if (game->hasRemainingCoupons()) {
+                        continue; // attendre que tous les coupons soient utilisés/écartés
+                    }
+
                     int winnerId = game->getWinner(); // récupère le winnerId avant de nettoyer
                     int boardSize = game->getBoard()->getSize(); // récupère la taille du board
                     
@@ -231,6 +235,9 @@ void Server::gameUpdateLoop() {
                     
                     for (int i = 0; i < 900; ++i) {
                         emptyBoardPacket.grid[i] = -1; // initialise toutes les cellules à -1 (vide)
+                    }
+                    for (int i = 0; i < 9; ++i) {
+                        emptyBoardPacket.exchangeCoupons[i] = 0;
                     }
                     
                     lobby->broadcast(PacketType::BOARD_UPDATE, &emptyBoardPacket, sizeof(BoardUpdatePacket)); // envoie le board vide à tous les joueurs du lobby

@@ -33,7 +33,7 @@ namespace PlacementRules {
                 return false; // bloc hors plateau
             }
 
-            if (!board.isEmpty(row, col)) {
+            if (!board.isEmpty(row, col) && !board.isBonus(row, col)) {
                 return false; // cellule occupée
             }
 

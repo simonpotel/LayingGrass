@@ -69,6 +69,8 @@ public:
     
     // gestion de la tuile actuelle
     int getCurrentPlayerTileId() const { return currentPlayerTileId; }
+    int getExchangeCouponCount() const { return exchangeCouponCount; }
+    void setExchangeCouponCount(int count) { exchangeCouponCount = count; }
     
     // gestion des transformations de tuile
     int getTileRotation() const { return tileRotation; }
@@ -111,6 +113,7 @@ private:
     int gameEndWinnerId; // identifiant de la couleur du gagnant stocké pour l'affichage GameEnd
     int gameEndLobbyId; // identifiant du lobby stocké pour l'affichage GameEnd
     std::string gameEndWinnerName; // nom du joueur gagnant stocké pour l'affichage GameEnd
+    int exchangeCouponCount; // nombre de coupons d'échange du joueur
 };
 
 #endif

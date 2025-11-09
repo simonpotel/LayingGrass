@@ -266,8 +266,13 @@ void Game::nextTurn() {
             // premier tour ou a déjà une tuile : on lui donne une tuile normalement
             giveTileToPlayer(nextPlayer);
         } else {
-            std::cout << "[GAME] [NEXT_TURN] Player " << nextPlayer << " has no tile available, assigning a new one" << std::endl;
-            giveTileToPlayer(nextPlayer, true);
+            // le joueur n'a pas de tuile et ce n'est pas son premier tour : il a été volé
+            // on passe son tour sans lui donner de tuile
+            std::cout << "[GAME] [NEXT_TURN] Player " << nextPlayer << " has no tile (stolen), skipping turn" << std::endl;
+            playerTurnsPlayed[nextPlayer]++; // compte quand même le tour comme joué
+            turnCount++; // incrémente le nombre d'actions
+            // passe au joueur suivant
+            nextTurn(); // récursion pour passer au joueur suivant
         }
     }
 }

@@ -5,6 +5,7 @@
 #include "Render/utils/Theme.hpp"
 #include "Render/utils/Element.hpp"
 #include "Render/utils/Tooltip.hpp"
+#include "Render/utils/ConfirmDialog.hpp"
 #include "Game/Tile.hpp"
 #include "Game/PlacementRules.hpp"
 #include "Game/Cell.hpp"
@@ -17,6 +18,11 @@ extern Client* g_client;
 namespace {
     int s_hoverRow = -1; // ligne du plateau survolée par la souris
     int s_hoverCol = -1; // colonne du plateau survolée par la souris
+    int s_pendingRow = -1; // ligne du placement en attente de confirmation
+    int s_pendingCol = -1; // colonne du placement en attente de confirmation
+    int s_pendingRotation = 0; // rotation du placement en attente
+    bool s_pendingFlippedH = false; // flip horizontal du placement en attente
+    bool s_pendingFlippedV = false; // flip vertical du placement en attente
     
     // applique les transformations à une tuile
     Tile applyTileTransform(const Tile& baseTile, int rotation, bool flippedH, bool flippedV) {
@@ -57,7 +63,13 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     float ix = bx - 250.0f - 30.0f; // position x: position plateau - largeur panneau - espacement
     float iy = by; // position y: aligné avec le plateau
     
-    sf::RectangleShape info(sf::Vector2f(250.0f, 200.0f));
+    // déclare les variables pour le tour et le joueur
+    int turnId = gameState.getCurrentTurnColorId();
+    int myId = gameState.getSelectedColor();
+    
+    float infoHeight = 200.0f;
+    
+    sf::RectangleShape info(sf::Vector2f(250.0f, infoHeight));
     info.setPosition(ix, iy);
     info.setFillColor(sf::Color(30, 30, 30));
     info.setOutlineColor(sf::Color::White);
@@ -86,8 +98,6 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
         over.setFillColor(sf::Color::White);
         window.draw(over);
     } else {
-        int turnId = gameState.getCurrentTurnColorId();
-        int myId = gameState.getSelectedColor();
         sf::Text turnInfo = Text::createText(turnId == myId ? "Your turn!" : "Opponent's turn", 20);
         turnInfo.setPosition(ix + 20.0f, iy + 20.0f + 70);
         turnInfo.setFillColor(turnId == myId ? Theme::FOREST_GREEN : sf::Color::White);
@@ -100,6 +110,23 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     couponsText.setPosition(ix + 20.0f, iy + 20.0f + 105);
     couponsText.setFillColor(gameState.getExchangeCouponCount() > 0 ? Theme::FOREST_GREEN : sf::Color(180, 180, 180));
     window.draw(couponsText);
+    
+    // affiche les bonus en attente dans le panneau d'info
+    if (!gameState.isGameOver() && turnId == myId) {
+        if (gameState.hasPendingStoneBonus()) {
+            sf::Text bonusText = Text::createText("STONE BONUS: Click empty cell", 16);
+            bonusText.setPosition(ix + 20.0f, iy + 20.0f + 130);
+            bonusText.setFillColor(sf::Color(255, 215, 0));
+            bonusText.setStyle(sf::Text::Bold);
+            window.draw(bonusText);
+        } else if (gameState.hasPendingRobberyBonus()) {
+            sf::Text bonusText = Text::createText("ROBBERY BONUS: Click opponent cell", 16);
+            bonusText.setPosition(ix + 20.0f, iy + 20.0f + 130);
+            bonusText.setFillColor(sf::Color(255, 69, 0));
+            bonusText.setStyle(sf::Text::Bold);
+            window.draw(bonusText);
+        }
+    }
 
     if (gameState.isGameOver() && gameState.getWinnerId() < 0) {
         std::string promptText;
@@ -117,9 +144,6 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     // panneau tuile droite
     float tx = bx + boardSize + 30.0f; // position x: position plateau + taille plateau + espacement
     float ty = by; // position y: aligné avec le plateau
-    
-    int turnId = gameState.getCurrentTurnColorId();
-    int myId = gameState.getSelectedColor();
     
     if (!gameState.isGameOver() && turnId == myId) {
         int tileId = gameState.getCurrentPlayerTileId();
@@ -243,13 +267,13 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
             tooltipText = "This is a stone tile";
         } else if (cellValue == static_cast<int>(CellType::BONUS_EXCHANGE)) {
             // bonus échange (non capturé, sinon ce serait une case joueur)
-            tooltipText = "This is a bonus square";
+            tooltipText = "Exchange bonus: Place tiles on 4 directions (N/S/E/W) to capture. Reward: 1 exchange coupon.";
         } else if (cellValue == static_cast<int>(CellType::BONUS_STONE)) {
             // bonus pierre
-            tooltipText = "This is a stone bonus square";
+            tooltipText = "Stone bonus: Place tiles on 4 directions (N/S/E/W) to capture. Reward: Place 1 stone immediately.";
         } else if (cellValue == static_cast<int>(CellType::BONUS_ROBBERY)) {
             // bonus vol
-            tooltipText = "This is a robbery bonus square";
+            tooltipText = "Robbery bonus: Place tiles on 4 directions (N/S/E/W) to capture. Reward: Steal 1 tile from opponent.";
         } else if (cellValue >= 0 && cellValue < 9) {
             // case d'un joueur
             tooltipText = gameState.getPlayerNameByColorId(lobbyId, cellValue);
@@ -262,9 +286,42 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
             Tooltip::draw(window, tooltipText, cellX, cellY);
         }
     }
+    
+    // affiche la popup de confirmation si visible
+    if (ConfirmDialog::isVisible()) {
+        ConfirmDialog::draw(window, "");
+    }
 }
 
 bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Event& event) {
+    // gère la popup de confirmation
+    if (ConfirmDialog::isVisible()) {
+        bool confirmed = ConfirmDialog::handleInput(event);
+        if (confirmed && s_pendingRow >= 0 && s_pendingCol >= 0) {
+            // l'utilisateur a confirmé, on envoie le placement en attente
+            if (g_client) {
+                int myId = gameState.getSelectedColor();
+                g_client->sendCellClick(gameState.getCurrentLobby(), s_pendingRow, s_pendingCol, 
+                    s_pendingRotation, s_pendingFlippedH, s_pendingFlippedV, false);
+                // réinitialise la prévisualisation après le clic
+                g_client->sendTilePreview(gameState.getCurrentLobby(), -1, -1, 
+                                         s_pendingRotation, 
+                                         s_pendingFlippedH, 
+                                         s_pendingFlippedV, 
+                                         myId);
+            }
+            s_pendingRow = -1;
+            s_pendingCol = -1;
+            return false;
+        } else if (event.type == sf::Event::KeyPressed && 
+                   (event.key.code == sf::Keyboard::Enter || event.key.code == sf::Keyboard::Escape)) {
+            // la popup a été fermée (annulée)
+            s_pendingRow = -1;
+            s_pendingCol = -1;
+            return false;
+        }
+    }
+    
     if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Tab) {
         gameState.setState(ClientState::VIEWING_TILES);
         return false;
@@ -371,17 +428,99 @@ bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Eve
         int myId = gameState.getSelectedColor();
         if (turnId != myId) return false;
         
+        // vérifie si le joueur a un bonus en attente
+        if (gameState.hasPendingStoneBonus()) {
+            // bonus de pierre : clic sur une case vide pour placer la pierre
+            int row, col;
+            if (BoardRenderer::handleClick(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y), bx, by, 18.0f, bs, row, col)) {
+                const Board& board = gameState.getBoard();
+                if (board.isValidPosition(row, col) && board.isEmpty(row, col)) {
+                    if (g_client) {
+                        g_client->sendPlaceStone(gameState.getCurrentLobby(), row, col);
+                    }
+                }
+            }
+            return false;
+        }
+        
+        if (gameState.hasPendingRobberyBonus()) {
+            // bonus de vol : clic sur une case d'un autre joueur pour voler sa tuile
+            int row, col;
+            if (BoardRenderer::handleClick(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y), bx, by, 18.0f, bs, row, col)) {
+                const Board& board = gameState.getBoard();
+                if (board.isValidPosition(row, col)) {
+                    int cellValue = board.getCellValue(row, col);
+                    // vérifie que c'est une case d'un autre joueur
+                    if (cellValue >= 0 && cellValue < 9 && cellValue != myId) {
+                        if (g_client) {
+                            g_client->sendRobTile(gameState.getCurrentLobby(), cellValue);
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        
+        // placement normal de tuile
         int row, col;
         if (BoardRenderer::handleClick(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y), bx, by, 18.0f, bs, row, col)) {
-            if (g_client) {
-                g_client->sendCellClick(gameState.getCurrentLobby(), row, col, 
-                    gameState.getTileRotation(), gameState.getTileFlippedH(), gameState.getTileFlippedV(), false);
-                // réinitialise la prévisualisation après le clic
-                g_client->sendTilePreview(gameState.getCurrentLobby(), -1, -1, 
-                                         gameState.getTileRotation(), 
-                                         gameState.getTileFlippedH(), 
-                                         gameState.getTileFlippedV(), 
-                                         myId);
+            // vérifie si la tuile couvrirait un bonus
+            const Board& board = gameState.getBoard();
+            int tileId = gameState.getCurrentPlayerTileId();
+            bool wouldCoverBonus = false;
+            std::string bonusTypeName = "";
+            
+            if (tileId >= 0 && tileId < static_cast<int>(TileId::TOTAL_TILES)) {
+                const Tile& baseTile = Tile::getTile(Tile::fromInt(tileId));
+                if (baseTile.isValid()) {
+                    Tile tile = applyTileTransform(baseTile, gameState.getTileRotation(), 
+                                                   gameState.getTileFlippedH(), gameState.getTileFlippedV());
+                    
+                    for (const auto& [blockRow, blockCol] : tile.blocks) {
+                        int actualRow = row + blockRow;
+                        int actualCol = col + blockCol;
+                        if (board.isValidPosition(actualRow, actualCol)) {
+                            int cellValue = board.getCellValue(actualRow, actualCol);
+                            if (cellValue == static_cast<int>(CellType::BONUS_EXCHANGE)) {
+                                wouldCoverBonus = true;
+                                bonusTypeName = "Tile exchange bonus";
+                                break;
+                            } else if (cellValue == static_cast<int>(CellType::BONUS_STONE)) {
+                                wouldCoverBonus = true;
+                                bonusTypeName = "Stone bonus";
+                                break;
+                            } else if (cellValue == static_cast<int>(CellType::BONUS_ROBBERY)) {
+                                wouldCoverBonus = true;
+                                bonusTypeName = "Robbery bonus";
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            if (wouldCoverBonus) {
+                // affiche la popup de confirmation
+                std::string message = "This tile will cover a " + bonusTypeName + "\nand it will be lost!\n\nContinue?";
+                ConfirmDialog::show(message);
+                // sauvegarde les paramètres du placement
+                s_pendingRow = row;
+                s_pendingCol = col;
+                s_pendingRotation = gameState.getTileRotation();
+                s_pendingFlippedH = gameState.getTileFlippedH();
+                s_pendingFlippedV = gameState.getTileFlippedV();
+            } else {
+                // placement normal, pas de bonus à couvrir
+                if (g_client) {
+                    g_client->sendCellClick(gameState.getCurrentLobby(), row, col, 
+                        gameState.getTileRotation(), gameState.getTileFlippedH(), gameState.getTileFlippedV(), false);
+                    // réinitialise la prévisualisation après le clic
+                    g_client->sendTilePreview(gameState.getCurrentLobby(), -1, -1, 
+                                             gameState.getTileRotation(), 
+                                             gameState.getTileFlippedH(), 
+                                             gameState.getTileFlippedV(), 
+                                             myId);
+                }
             }
         }
     }

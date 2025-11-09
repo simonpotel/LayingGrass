@@ -36,6 +36,8 @@ GameState::GameState()
       gameEndWinnerId(-1),
       gameEndLobbyId(-1),
       exchangeCouponCount(0),
+      pendingStoneBonus(false),
+      pendingRobberyBonus(false),
       previewRow(-1),
       previewCol(-1),
       previewRotation(0),
@@ -87,8 +89,12 @@ void GameState::updateBoard(const BoardUpdatePacket& packet) {
     currentPlayerTileId = packet.currentPlayerTileId;
     if (selectedColorId >= 0 && selectedColorId < 9) {
         exchangeCouponCount = packet.exchangeCoupons[selectedColorId];
+        pendingStoneBonus = packet.pendingStoneBonus[selectedColorId];
+        pendingRobberyBonus = packet.pendingRobberyBonus[selectedColorId];
     } else {
         exchangeCouponCount = 0;
+        pendingStoneBonus = false;
+        pendingRobberyBonus = false;
     }
     
     if (oldTileId != currentPlayerTileId) {
@@ -119,6 +125,8 @@ void GameState::resetGameData() {
     currentPlayerTileId = -1;
     resetTileTransform();
     exchangeCouponCount = 0;
+    pendingStoneBonus = false;
+    pendingRobberyBonus = false;
 }
 
 std::vector<LobbyInfo> GameState::getLobbies() const {

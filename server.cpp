@@ -93,8 +93,53 @@ void handleCellClick(Player* player, const void* data, size_t size) {
         return;
     }
     
+    // vérifie si le joueur a un bonus en attente (doit être utilisé immédiatement)
+    if (game->hasPendingStoneBonus(player->connection) || game->hasPendingRobberyBonus(player->connection)) {
+        return; // le joueur doit d'abord utiliser son bonus
+    }
+    
     game->handleCellClick(player->connection, packet->row, packet->col, 
         packet->rotation, packet->flippedH, packet->flippedV, packet->useCoupon);
+}
+
+void handlePlaceStone(Player* player, const void* data, size_t size) {
+    const PlaceStonePacket* packet = (const PlaceStonePacket*)data;
+    
+    if (!g_server) {
+        return;
+    }
+    
+    Lobby* lobby = g_server->getLobbyManager().findLobbyById(packet->lobbyId);
+    if (!lobby) {
+        return;
+    }
+    
+    Game* game = lobby->getGame();
+    if (!game) {
+        return;
+    }
+    
+    game->placeStone(player->connection, packet->row, packet->col);
+}
+
+void handleRobTile(Player* player, const void* data, size_t size) {
+    const RobTilePacket* packet = (const RobTilePacket*)data;
+    
+    if (!g_server) {
+        return;
+    }
+    
+    Lobby* lobby = g_server->getLobbyManager().findLobbyById(packet->lobbyId);
+    if (!lobby) {
+        return;
+    }
+    
+    Game* game = lobby->getGame();
+    if (!game) {
+        return;
+    }
+    
+    game->robTile(player->connection, packet->targetPlayerColorId);
 }
 
 void handleStartGameRequest(Player* player, const void* data, size_t size) {
@@ -160,6 +205,8 @@ int main() {
     server.getCallbackManager().registerCallback(PacketType::CELL_CLICK, handleCellClick);
     server.getCallbackManager().registerCallback(PacketType::START_GAME_REQUEST, handleStartGameRequest);
     server.getCallbackManager().registerCallback(PacketType::TILE_PREVIEW, handleTilePreview);
+    server.getCallbackManager().registerCallback(PacketType::PLACE_STONE, handlePlaceStone);
+    server.getCallbackManager().registerCallback(PacketType::ROB_TILE, handleRobTile);
     server.start();
 
     std::cout << "Server started on port 5555" << std::endl;

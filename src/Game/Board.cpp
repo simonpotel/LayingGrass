@@ -97,4 +97,47 @@ bool Board::isBonus(int row, int col) const {
     return getCell(row, col).isBonus();
 }
 
+bool Board::isValidBonusPosition(int row, int col) const {
+    // vérifie que la position est valide et pas sur un bord
+    if (row <= 0 || row >= size - 1 || col <= 0 || col >= size - 1) {
+        return false; // sur un bord
+    }
+    
+    // vérifie que la cellule est vide
+    if (!isEmpty(row, col)) {
+        return false;
+    }
+    
+    // vérifie qu'il n'y a pas de bonus adjacent (4 directions cardinales)
+    const int directions[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+    for (int i = 0; i < 4; ++i) {
+        int newRow = row + directions[i][0];
+        int newCol = col + directions[i][1];
+        if (isValidPosition(newRow, newCol) && isBonus(newRow, newCol)) {
+            return false; // adjacent à un autre bonus
+        }
+    }
+    
+    return true; // position valide
+}
+
+bool Board::isBonusCaptured(int row, int col, int playerId) const {
+    // vérifie que c'est bien un bonus
+    if (!isBonus(row, col)) {
+        return false;
+    }
+    
+    // vérifie que les 4 directions cardinales sont occupées par le même joueur
+    const int directions[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+    for (int i = 0; i < 4; ++i) {
+        int newRow = row + directions[i][0];
+        int newCol = col + directions[i][1];
+        if (!isValidPosition(newRow, newCol) || !isPlayerCell(newRow, newCol, playerId)) {
+            return false; // une direction n'est pas occupée par ce joueur
+        }
+    }
+    
+    return true; // toutes les 4 directions sont occupées par ce joueur
+}
+
 

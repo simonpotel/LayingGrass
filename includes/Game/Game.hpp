@@ -29,6 +29,10 @@ public:
     int getExchangeCouponCount(int connection) const; // retourne le nombre de coupons d'échange du joueur
     bool useExchangeCoupon(int connection, int row, int col); // tente d'utiliser un coupon
     bool hasRemainingCoupons() const; // indique si des coupons restent à utiliser
+    bool placeStone(int connection, int row, int col); // place une pierre avec le bonus stone
+    bool robTile(int connection, int targetPlayerColorId); // vole une tuile avec le bonus robbery
+    bool hasPendingStoneBonus(int connection) const; // retourne true si le joueur doit placer une pierre
+    bool hasPendingRobberyBonus(int connection) const; // retourne true si le joueur doit voler une tuile
     
     // Méthodes utilitaires pour le calcul du gagnant
     int getPlayerTerritoryCount(int playerId) const; // compte le nombre de cellules d'un joueur
@@ -60,6 +64,8 @@ private:
     std::unordered_map<int, int> playerTiles; // tuile actuelle de chaque joueur
     std::unordered_map<int, int> playerTurnsPlayed; // nombre de tours joués par chaque joueur
     std::unordered_map<int, int> playerExchangeCoupons; // coupons d'échange disponibles par joueur
+    std::unordered_map<int, bool> playerPendingStoneBonus; // true si le joueur doit placer une pierre immédiatement
+    std::unordered_map<int, bool> playerPendingRobberyBonus; // true si le joueur doit voler une tuile immédiatement
     
     // Queue de tuiles prédéfinie mais aléatoire
     std::vector<int> tileQueue; // queue des tuiles à distribuer (ordre prédéterminé mais aléatoire)

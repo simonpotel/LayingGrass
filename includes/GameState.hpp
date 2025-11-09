@@ -78,6 +78,8 @@ public:
     int getCurrentPlayerTileId() const { return currentPlayerTileId; }
     int getExchangeCouponCount() const { return exchangeCouponCount; }
     void setExchangeCouponCount(int count) { exchangeCouponCount = count; }
+    bool hasPendingStoneBonus() const { return pendingStoneBonus; }
+    bool hasPendingRobberyBonus() const { return pendingRobberyBonus; }
     
     // gestion de la prévisualisation
     void updateTilePreview(const TilePreviewPacket& packet);
@@ -131,6 +133,8 @@ private:
     int gameEndLobbyId; // identifiant du lobby stocké pour l'affichage GameEnd
     std::string gameEndWinnerName; // nom du joueur gagnant stocké pour l'affichage GameEnd
     int exchangeCouponCount; // nombre de coupons d'échange du joueur
+    bool pendingStoneBonus; // true si le joueur doit placer une pierre immédiatement
+    bool pendingRobberyBonus; // true si le joueur doit voler une tuile immédiatement
     
     // prévisualisation de placement
     int previewRow; // ligne de prévisualisation (-1 si pas de prévisualisation)

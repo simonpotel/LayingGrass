@@ -14,7 +14,9 @@ enum class PacketType {
     BOARD_UPDATE, // mise à jour de la grille du jeu
     CELL_CLICK, // clic sur une cellule de la grille
     START_GAME_REQUEST, // demande de lancer la partie
-    TILE_PREVIEW // prévisualisation de placement de tuile
+    TILE_PREVIEW, // prévisualisation de placement de tuile
+    PLACE_STONE, // placer une pierre avec le bonus stone
+    ROB_TILE // voler une tuile avec le bonus robbery
 };
 
 #include "PacketCallback.hpp"
@@ -73,6 +75,8 @@ struct BoardUpdatePacket {
     int winnerId; // identifiant de la couleur du gagnant (-1 si pas de gagnant)
     int currentPlayerTileId; // ID de la tuile du joueur dont c'est le tour (-1 si aucune tuile)
     int exchangeCoupons[9]; // coupons d'échange par couleur
+    bool pendingStoneBonus[9]; // bonus de pierre en attente par couleur
+    bool pendingRobberyBonus[9]; // bonus de vol en attente par couleur
 };
 
 struct CellClickPacket {
@@ -97,6 +101,17 @@ struct TilePreviewPacket {
     bool flippedH; // flip horizontal
     bool flippedV; // flip vertical
     int colorId; // couleur du joueur qui prévisualise
+};
+
+struct PlaceStonePacket {
+    int lobbyId; // identifiant du lobby
+    int row; // ligne où placer la pierre
+    int col; // colonne où placer la pierre
+};
+
+struct RobTilePacket {
+    int lobbyId; // identifiant du lobby
+    int targetPlayerColorId; // couleur du joueur dont on vole une tuile
 };
 
 namespace Packet {

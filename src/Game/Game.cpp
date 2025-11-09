@@ -358,26 +358,18 @@ int Game::getPlayerTerritoryCount(int playerId) const {
 }
 
 int Game::getPlayerLargestSquare(int playerId) const {
-    // TODO: Implémenter l'algorithme pour trouver le plus grand carré
-    // Pour l'instant, on retourne 0
-    // Cette méthode devra parcourir toutes les cellules et trouver le plus grand carré
-    // formé uniquement par les cellules du joueur
-    
     int maxSquare = 0;
     int size = board.getSize();
     
-    // Algorithme simple : pour chaque position, vérifier si on peut former un carré
     for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) {
             if (!board.isPlayerCell(i, j, playerId)) {
                 continue;
             }
             
-            // Essayer de former un carré de plus en plus grand
             for (int squareSize = 1; squareSize <= size - std::max(i, j); ++squareSize) {
                 bool isValidSquare = true;
                 
-                // Vérifier si toutes les cellules du carré appartiennent au joueur
                 for (int di = 0; di < squareSize && isValidSquare; ++di) {
                     for (int dj = 0; dj < squareSize && isValidSquare; ++dj) {
                         if (!board.isPlayerCell(i + di, j + dj, playerId)) {
@@ -389,7 +381,7 @@ int Game::getPlayerLargestSquare(int playerId) const {
                 if (isValidSquare) {
                     maxSquare = std::max(maxSquare, squareSize);
                 } else {
-                    break; // Pas besoin de continuer avec des carrés plus grands
+                    break;
                 }
             }
         }

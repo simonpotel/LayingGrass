@@ -128,6 +128,19 @@ int main() {
                 }
             }
         }
+        
+        if (currentGameState->getState() == ClientState::IN_LOBBY && currentGameState->isStartGameRequested()) {
+            int lobbyId = currentGameState->getCurrentLobby();
+            if (lobbyId != -1) {
+                client.sendStartGameRequest(lobbyId);
+                {
+                    std::lock_guard<std::mutex> lock(g_gameStateMutex);
+                    if (g_gameState == currentGameState) {
+                        g_gameState->setStartGameRequested(false);
+                    }
+                }
+            }
+        }
 
         Render::render(*window, *currentGameState);
     }

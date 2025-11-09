@@ -12,7 +12,8 @@ enum class PacketType {
     GAME_START, // début de la partie
     GAME_END, // fin de la partie
     BOARD_UPDATE, // mise à jour de la grille du jeu
-    CELL_CLICK // clic sur une cellule de la grille
+    CELL_CLICK, // clic sur une cellule de la grille
+    START_GAME_REQUEST // demande de lancer la partie
 };
 
 #include "PacketCallback.hpp"
@@ -81,6 +82,10 @@ struct CellClickPacket {
     bool flippedH; // flip horizontal de la tuile
     bool flippedV; // flip vertical de la tuile
     bool useCoupon; // true si on souhaite utiliser un coupon
+};
+
+struct StartGameRequestPacket {
+    int lobbyId; // identifiant du lobby
 };
 
 namespace Packet {

@@ -79,6 +79,14 @@ bool Client::sendCellClick(int lobbyId, int row, int col, int rotation, bool fli
     return Packet::sendPacket(socketFd, PacketType::CELL_CLICK, &packet, sizeof(CellClickPacket)); // envoie le clic au serveur
 }
 
+bool Client::sendStartGameRequest(int lobbyId) {
+    StartGameRequestPacket packet; // structure pour la demande de lancer la partie
+    memset(&packet, 0, sizeof(packet)); // initialise la structure à 0
+    packet.lobbyId = lobbyId; // définit l'identifiant du lobby
+
+    return Packet::sendPacket(socketFd, PacketType::START_GAME_REQUEST, &packet, sizeof(StartGameRequestPacket)); // envoie la demande au serveur
+}
+
 void Client::startReceiving() {
     if (receiving || !connected) {
         return; // déjà en cours de réception ou non connecté

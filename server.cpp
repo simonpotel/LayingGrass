@@ -69,17 +69,6 @@ void handleConnectRequest(Player* player, const void* data, size_t size) {
         std::cout << "Player " << player->playerName << " connected to lobby " << packet->lobbyId << std::endl;
 
         Packet::sendPacket(player->connection, PacketType::CONNECT_RESPONSE, &response, sizeof(response));
-
-        if (lobby->isFull()) {
-            GameStartPacket gameStartPacket;
-            gameStartPacket.lobbyId = packet->lobbyId;
-
-            lobby->broadcast(PacketType::GAME_START, &gameStartPacket, sizeof(GameStartPacket));
-
-            std::cout << "Lobby " << packet->lobbyId << " is full, starting game!" << std::endl;
-
-            lobby->startGame();
-        }
     } else {
         response.accepted = false;
         strncpy(response.reason, "Error adding to lobby", sizeof(response.reason) - 1);
@@ -108,12 +97,46 @@ void handleCellClick(Player* player, const void* data, size_t size) {
         packet->rotation, packet->flippedH, packet->flippedV, packet->useCoupon);
 }
 
+void handleStartGameRequest(Player* player, const void* data, size_t size) {
+    const StartGameRequestPacket* packet = (const StartGameRequestPacket*)data;
+    
+    if (!g_server) {
+        return;
+    }
+    
+    Lobby* lobby = g_server->getLobbyManager().findLobbyById(packet->lobbyId);
+    if (!lobby) {
+        return;
+    }
+    
+    // vérifie que le lobby n'est pas déjà lancé
+    if (lobby->gameStarted) {
+        return;
+    }
+    
+    // vérifie qu'il y a au moins 2 joueurs
+    if (lobby->getPlayerCount() < 2) {
+        return;
+    }
+    
+    // lance la partie
+    GameStartPacket gameStartPacket;
+    gameStartPacket.lobbyId = packet->lobbyId;
+    
+    lobby->broadcast(PacketType::GAME_START, &gameStartPacket, sizeof(GameStartPacket));
+    
+    std::cout << "Lobby " << packet->lobbyId << " game started by player!" << std::endl;
+    
+    lobby->startGame();
+}
+
 int main() {
     Server server(5555);
     g_server = &server; // stocke le pointeur global pour le callback
 
     server.getCallbackManager().registerCallback(PacketType::CONNECT_REQUEST, handleConnectRequest);
     server.getCallbackManager().registerCallback(PacketType::CELL_CLICK, handleCellClick);
+    server.getCallbackManager().registerCallback(PacketType::START_GAME_REQUEST, handleStartGameRequest);
     server.start();
 
     std::cout << "Server started on port 5555" << std::endl;

@@ -58,6 +58,10 @@ public:
     // flag pour savoir si la requête de connexion a déjà été envoyée
     void setRequestSent(bool sent) { requestSent = sent; }
     bool isRequestSent() const { return requestSent; }
+    
+    // flag pour savoir si on a demandé de lancer la partie
+    void setStartGameRequested(bool requested) { startGameRequested = requested; }
+    bool isStartGameRequested() const { return startGameRequested; }
 
     // gestion du board
     void updateBoard(const BoardUpdatePacket& packet);
@@ -100,6 +104,7 @@ private:
     std::string username; // nom d'utilisateur saisi
     int selectedColorId; // identifiant de la couleur sélectionnée (-1 si aucune)
     bool requestSent; // true si la requête de connexion a été envoyée
+    bool startGameRequested; // true si on a demandé de lancer la partie
     
     Board board; // grille du jeu
     int currentTurnColorId; // couleur du joueur dont c'est le tour

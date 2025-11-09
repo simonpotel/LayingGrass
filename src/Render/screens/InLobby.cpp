@@ -55,12 +55,71 @@ void InLobby::draw(sf::RenderWindow& window, GameState& gameState) {
         }
     }
     
-    sf::Text waiting = Text::createText("Waiting for game to start...", 24);
-    Element::centerH(waiting, static_cast<float>(ws.x), cy + 350.0f - 50.0f); // centré horizontalement, positionné en bas du conteneur avec marge
-    waiting.setFillColor(sf::Color::White);
-    window.draw(waiting);
+    // bouton Start Game en bas de l'écran, centré horizontalement
+    float btnWidth = 250.0f;
+    float btnHeight = 60.0f;
+    float btnX = (ws.x - btnWidth) / 2.0f; // centré horizontalement
+    float btnY = ws.y - btnHeight - 30.0f; // en bas de l'écran avec marge de 30px
+    
+    // vérifie si le lobby a au moins 2 joueurs
+    bool canStart = false;
+    for (const auto& lobby : lobbies) {
+        if (lobby.lobbyId == lobbyId) {
+            canStart = lobby.playerCount >= 2;
+            break;
+        }
+    }
+    
+    sf::RectangleShape btn(sf::Vector2f(btnWidth, btnHeight));
+    btn.setPosition(btnX, btnY);
+    btn.setFillColor(canStart ? Theme::FOREST_GREEN : Theme::NEUTRAL_GRAY);
+    btn.setOutlineColor(sf::Color::White);
+    btn.setOutlineThickness(2);
+    window.draw(btn);
+    
+    sf::Text btnText = Text::createText("Start Game", 28);
+    Element::centerInContainer(btnText, btnX, btnY, btnWidth, btnHeight);
+    btnText.setFillColor(canStart ? sf::Color::White : sf::Color(128, 128, 128));
+    window.draw(btnText);
 }
 
 bool InLobby::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Event& event) {
+    if (event.type != sf::Event::MouseButtonPressed || event.mouseButton.button != sf::Mouse::Left) {
+        return false;
+    }
+    
+    sf::Vector2f mouse(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y));
+    sf::Vector2u ws = window.getSize();
+    
+    float cx = (ws.x - 500.0f) / 2.0f;
+    float cy = (ws.y - 350.0f) / 2.0f;
+    
+    // bouton Start Game en bas de l'écran, centré horizontalement
+    float btnWidth = 250.0f;
+    float btnHeight = 60.0f;
+    float btnX = (ws.x - btnWidth) / 2.0f;
+    float btnY = ws.y - btnHeight - 30.0f; // en bas de l'écran avec marge de 30px
+    sf::FloatRect btnBounds(btnX, btnY, btnWidth, btnHeight);
+    
+    if (btnBounds.contains(mouse.x, mouse.y)) {
+        int lobbyId = gameState.getCurrentLobby();
+        const auto& lobbies = gameState.getLobbies();
+        
+        // vérifie si le lobby a au moins 2 joueurs
+        bool canStart = false;
+        for (const auto& lobby : lobbies) {
+            if (lobby.lobbyId == lobbyId) {
+                canStart = lobby.playerCount >= 2;
+                break;
+            }
+        }
+        
+        if (canStart && lobbyId != -1) {
+            // le packet sera envoyé dans client.cpp
+            gameState.setStartGameRequested(true);
+            return false;
+        }
+    }
+    
     return false;
 }

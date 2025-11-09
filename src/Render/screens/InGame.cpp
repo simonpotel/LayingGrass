@@ -176,16 +176,44 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     BoardRenderer::draw(window, board, bx, by, 18.0f);
     
     // prévisualisation
-    if (!gameState.isGameOver() && turnId == myId) {
-        int tileId = gameState.getCurrentPlayerTileId();
-        if (tileId >= 0 && tileId < static_cast<int>(TileId::TOTAL_TILES)) {
-            const Tile& baseTile = Tile::getTile(Tile::fromInt(tileId));
-            if (baseTile.isValid() && s_hoverRow >= 0 && s_hoverCol >= 0) {
-                // applique les transformations pour la prévisualisation
-                Tile tile = applyTileTransform(baseTile, gameState.getTileRotation(), gameState.getTileFlippedH(), gameState.getTileFlippedV());
-                bool firstTurn = !PlacementRules::playerHasCells(board, myId);
-                bool canPlace = PlacementRules::canPlaceTile(board, tile, s_hoverRow, s_hoverCol, myId, firstTurn);
-                BoardRenderer::drawPreview(window, tile, bx, by, 18.0f, bs, s_hoverRow, s_hoverCol, canPlace, GameState::PLAYERS_COLORS[myId]);
+    if (!gameState.isGameOver()) {
+        int previewColorId = gameState.getPreviewColorId();
+        int previewRow = gameState.getPreviewRow();
+        int previewCol = gameState.getPreviewCol();
+        
+        // affiche la prévisualisation si c'est le tour d'un autre joueur et que c'est bien son tour
+        if (previewColorId >= 0 && previewColorId < 9 && previewRow >= 0 && previewCol >= 0 && 
+            previewColorId != myId && previewColorId == turnId) {
+            // utilise la tuile du joueur actif depuis le gameState
+            int tileId = gameState.getCurrentPlayerTileId();
+            if (tileId >= 0 && tileId < static_cast<int>(TileId::TOTAL_TILES)) {
+                const Tile& baseTile = Tile::getTile(Tile::fromInt(tileId));
+                if (baseTile.isValid()) {
+                    // applique les transformations de la prévisualisation
+                    Tile tile = applyTileTransform(baseTile, gameState.getPreviewRotation(), 
+                                                   gameState.getPreviewFlippedH(), gameState.getPreviewFlippedV());
+                    bool firstTurn = !PlacementRules::playerHasCells(board, previewColorId);
+                    bool canPlace = PlacementRules::canPlaceTile(board, tile, previewRow, previewCol, previewColorId, firstTurn);
+                    // utilise une couleur semi-transparente pour la prévisualisation des autres joueurs
+                    sf::Color previewColor = GameState::PLAYERS_COLORS[previewColorId];
+                    previewColor.a = 150; // semi-transparent
+                    BoardRenderer::drawPreview(window, tile, bx, by, 18.0f, bs, previewRow, previewCol, canPlace, previewColor);
+                }
+            }
+        }
+        
+        // prévisualisation locale si c'est mon tour
+        if (turnId == myId) {
+            int tileId = gameState.getCurrentPlayerTileId();
+            if (tileId >= 0 && tileId < static_cast<int>(TileId::TOTAL_TILES)) {
+                const Tile& baseTile = Tile::getTile(Tile::fromInt(tileId));
+                if (baseTile.isValid() && s_hoverRow >= 0 && s_hoverCol >= 0) {
+                    // applique les transformations pour la prévisualisation
+                    Tile tile = applyTileTransform(baseTile, gameState.getTileRotation(), gameState.getTileFlippedH(), gameState.getTileFlippedV());
+                    bool firstTurn = !PlacementRules::playerHasCells(board, myId);
+                    bool canPlace = PlacementRules::canPlaceTile(board, tile, s_hoverRow, s_hoverCol, myId, firstTurn);
+                    BoardRenderer::drawPreview(window, tile, bx, by, 18.0f, bs, s_hoverRow, s_hoverCol, canPlace, GameState::PLAYERS_COLORS[myId]);
+                }
             }
         }
     }
@@ -248,16 +276,29 @@ bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Eve
             int turnId = gameState.getCurrentTurnColorId();
             int myId = gameState.getSelectedColor();
             if (turnId == myId) {
+                bool transformChanged = false;
                 if (event.key.code == sf::Keyboard::R) {
                     gameState.setTileRotation(gameState.getTileRotation() + 1);
+                    transformChanged = true;
                 } else if (event.key.code == sf::Keyboard::F) {
                     gameState.setTileFlippedH(!gameState.getTileFlippedH());
+                    transformChanged = true;
                 } else if (event.key.code == sf::Keyboard::V) {
                     gameState.setTileFlippedV(!gameState.getTileFlippedV());
+                    transformChanged = true;
                 } else if (event.key.code == sf::Keyboard::C) {
                     if (gameState.getExchangeCouponCount() > 0 && g_client) {
                         g_client->sendCellClick(gameState.getCurrentLobby(), -1, -1, 0, false, false, true);
                     }
+                }
+                
+                // envoie la prévisualisation mise à jour si les transformations ont changé
+                if (transformChanged && g_client && s_hoverRow >= 0 && s_hoverCol >= 0) {
+                    g_client->sendTilePreview(gameState.getCurrentLobby(), s_hoverRow, s_hoverCol, 
+                                             gameState.getTileRotation(), 
+                                             gameState.getTileFlippedH(), 
+                                             gameState.getTileFlippedV(), 
+                                             myId);
                 }
             }
         } else {
@@ -291,9 +332,35 @@ bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Eve
         if (BoardRenderer::handleClick(static_cast<float>(event.mouseMove.x), static_cast<float>(event.mouseMove.y), bx, by, 18.0f, bs, row, col)) {
             s_hoverRow = row;
             s_hoverCol = col;
+            
+            // envoie la prévisualisation si c'est mon tour
+            if (!gameState.isGameOver()) {
+                int turnId = gameState.getCurrentTurnColorId();
+                int myId = gameState.getSelectedColor();
+                if (turnId == myId && g_client) {
+                    g_client->sendTilePreview(gameState.getCurrentLobby(), row, col, 
+                                             gameState.getTileRotation(), 
+                                             gameState.getTileFlippedH(), 
+                                             gameState.getTileFlippedV(), 
+                                             myId);
+                }
+            }
         } else {
             s_hoverRow = -1;
             s_hoverCol = -1;
+            
+            // envoie une prévisualisation vide si on sort du board
+            if (!gameState.isGameOver()) {
+                int turnId = gameState.getCurrentTurnColorId();
+                int myId = gameState.getSelectedColor();
+                if (turnId == myId && g_client) {
+                    g_client->sendTilePreview(gameState.getCurrentLobby(), -1, -1, 
+                                             gameState.getTileRotation(), 
+                                             gameState.getTileFlippedH(), 
+                                             gameState.getTileFlippedV(), 
+                                             myId);
+                }
+            }
         }
     }
     
@@ -309,6 +376,12 @@ bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Eve
             if (g_client) {
                 g_client->sendCellClick(gameState.getCurrentLobby(), row, col, 
                     gameState.getTileRotation(), gameState.getTileFlippedH(), gameState.getTileFlippedV(), false);
+                // réinitialise la prévisualisation après le clic
+                g_client->sendTilePreview(gameState.getCurrentLobby(), -1, -1, 
+                                         gameState.getTileRotation(), 
+                                         gameState.getTileFlippedH(), 
+                                         gameState.getTileFlippedV(), 
+                                         myId);
             }
         }
     }

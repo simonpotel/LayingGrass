@@ -130,6 +130,28 @@ void handleStartGameRequest(Player* player, const void* data, size_t size) {
     lobby->startGame();
 }
 
+void handleTilePreview(Player* player, const void* data, size_t size) {
+    const TilePreviewPacket* packet = (const TilePreviewPacket*)data;
+    
+    if (!g_server) {
+        return;
+    }
+    
+    Lobby* lobby = g_server->getLobbyManager().findLobbyById(packet->lobbyId);
+    if (!lobby) {
+        return;
+    }
+    
+    // vérifie que le lobby a une partie en cours
+    if (!lobby->gameStarted || !lobby->getGame()) {
+        return;
+    }
+    
+    // broadcast la prévisualisation à tous les joueurs du lobby (sauf l'expéditeur)
+    // on envoie à tous pour que tout le monde voie la prévisualisation
+    lobby->broadcast(PacketType::TILE_PREVIEW, packet, sizeof(TilePreviewPacket));
+}
+
 int main() {
     Server server(5555);
     g_server = &server; // stocke le pointeur global pour le callback
@@ -137,6 +159,7 @@ int main() {
     server.getCallbackManager().registerCallback(PacketType::CONNECT_REQUEST, handleConnectRequest);
     server.getCallbackManager().registerCallback(PacketType::CELL_CLICK, handleCellClick);
     server.getCallbackManager().registerCallback(PacketType::START_GAME_REQUEST, handleStartGameRequest);
+    server.getCallbackManager().registerCallback(PacketType::TILE_PREVIEW, handleTilePreview);
     server.start();
 
     std::cout << "Server started on port 5555" << std::endl;

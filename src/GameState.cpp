@@ -35,7 +35,13 @@ GameState::GameState()
       tileFlippedV(false),
       gameEndWinnerId(-1),
       gameEndLobbyId(-1),
-      exchangeCouponCount(0) {
+      exchangeCouponCount(0),
+      previewRow(-1),
+      previewCol(-1),
+      previewRotation(0),
+      previewFlippedH(false),
+      previewFlippedV(false),
+      previewColorId(-1) {
 }
 
 GameState::~GameState() {
@@ -73,6 +79,7 @@ void GameState::updateBoard(const BoardUpdatePacket& packet) {
     
     // réinitialise la transformation si la tuile change
     int oldTileId = currentPlayerTileId;
+    int oldTurnColorId = currentTurnColorId;
     currentTurnColorId = packet.currentTurnColorId;
     turnCount = packet.turnCount;
     gameOver = packet.gameOver;
@@ -86,6 +93,13 @@ void GameState::updateBoard(const BoardUpdatePacket& packet) {
     
     if (oldTileId != currentPlayerTileId) {
         resetTileTransform();
+    }
+    
+    // réinitialise la prévisualisation si le tour change
+    if (oldTurnColorId != currentTurnColorId) {
+        previewRow = -1;
+        previewCol = -1;
+        previewColorId = -1;
     }
 }
 
@@ -127,4 +141,13 @@ std::string GameState::getPlayerNameByColorId(int lobbyId, int colorId) const {
     }
     
     return ""; // joueur non trouvé
+}
+
+void GameState::updateTilePreview(const TilePreviewPacket& packet) {
+    previewRow = packet.row;
+    previewCol = packet.col;
+    previewRotation = packet.rotation;
+    previewFlippedH = packet.flippedH;
+    previewFlippedV = packet.flippedV;
+    previewColorId = packet.colorId;
 }

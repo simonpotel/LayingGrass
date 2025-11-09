@@ -79,6 +79,15 @@ public:
     int getExchangeCouponCount() const { return exchangeCouponCount; }
     void setExchangeCouponCount(int count) { exchangeCouponCount = count; }
     
+    // gestion de la prévisualisation
+    void updateTilePreview(const TilePreviewPacket& packet);
+    int getPreviewRow() const { return previewRow; }
+    int getPreviewCol() const { return previewCol; }
+    int getPreviewRotation() const { return previewRotation; }
+    bool getPreviewFlippedH() const { return previewFlippedH; }
+    bool getPreviewFlippedV() const { return previewFlippedV; }
+    int getPreviewColorId() const { return previewColorId; }
+    
     // gestion des transformations de tuile
     int getTileRotation() const { return tileRotation; }
     void setTileRotation(int rotation) { tileRotation = rotation % 4; }
@@ -122,6 +131,14 @@ private:
     int gameEndLobbyId; // identifiant du lobby stocké pour l'affichage GameEnd
     std::string gameEndWinnerName; // nom du joueur gagnant stocké pour l'affichage GameEnd
     int exchangeCouponCount; // nombre de coupons d'échange du joueur
+    
+    // prévisualisation de placement
+    int previewRow; // ligne de prévisualisation (-1 si pas de prévisualisation)
+    int previewCol; // colonne de prévisualisation (-1 si pas de prévisualisation)
+    int previewRotation; // rotation de la prévisualisation
+    bool previewFlippedH; // flip horizontal de la prévisualisation
+    bool previewFlippedV; // flip vertical de la prévisualisation
+    int previewColorId; // couleur du joueur qui prévisualise (-1 si aucun)
 };
 
 #endif

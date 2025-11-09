@@ -87,6 +87,20 @@ bool Client::sendStartGameRequest(int lobbyId) {
     return Packet::sendPacket(socketFd, PacketType::START_GAME_REQUEST, &packet, sizeof(StartGameRequestPacket)); // envoie la demande au serveur
 }
 
+bool Client::sendTilePreview(int lobbyId, int row, int col, int rotation, bool flippedH, bool flippedV, int colorId) {
+    TilePreviewPacket packet; // structure pour la prévisualisation de placement
+    memset(&packet, 0, sizeof(packet)); // initialise la structure à 0
+    packet.lobbyId = lobbyId; // définit l'identifiant du lobby
+    packet.row = row; // définit la ligne
+    packet.col = col; // définit la colonne
+    packet.rotation = rotation; // définit la rotation
+    packet.flippedH = flippedH; // définit le flip horizontal
+    packet.flippedV = flippedV; // définit le flip vertical
+    packet.colorId = colorId; // définit la couleur du joueur
+
+    return Packet::sendPacket(socketFd, PacketType::TILE_PREVIEW, &packet, sizeof(TilePreviewPacket)); // envoie la prévisualisation au serveur
+}
+
 void Client::startReceiving() {
     if (receiving || !connected) {
         return; // déjà en cours de réception ou non connecté

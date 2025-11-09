@@ -13,7 +13,8 @@ enum class PacketType {
     GAME_END, // fin de la partie
     BOARD_UPDATE, // mise à jour de la grille du jeu
     CELL_CLICK, // clic sur une cellule de la grille
-    START_GAME_REQUEST // demande de lancer la partie
+    START_GAME_REQUEST, // demande de lancer la partie
+    TILE_PREVIEW // prévisualisation de placement de tuile
 };
 
 #include "PacketCallback.hpp"
@@ -86,6 +87,16 @@ struct CellClickPacket {
 
 struct StartGameRequestPacket {
     int lobbyId; // identifiant du lobby
+};
+
+struct TilePreviewPacket {
+    int lobbyId; // identifiant du lobby
+    int row; // ligne de prévisualisation (-1 si pas de prévisualisation)
+    int col; // colonne de prévisualisation (-1 si pas de prévisualisation)
+    int rotation; // rotation de la tuile (0-3)
+    bool flippedH; // flip horizontal
+    bool flippedV; // flip vertical
+    int colorId; // couleur du joueur qui prévisualise
 };
 
 namespace Packet {

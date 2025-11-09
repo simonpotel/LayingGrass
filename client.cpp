@@ -76,6 +76,15 @@ void handleBoardUpdate(const void* data, size_t size) {
     }
 }
 
+void handleTilePreview(const void* data, size_t size) {
+    const TilePreviewPacket* packet = (const TilePreviewPacket*)data;
+    
+    std::lock_guard<std::mutex> lock(g_gameStateMutex);
+    if (g_gameState) {
+        g_gameState->updateTilePreview(*packet);
+    }
+}
+
 int main() {
     Client client;
     auto gameState = std::make_shared<GameState>();
@@ -95,6 +104,7 @@ int main() {
     client.getCallbackManager().registerCallback(PacketType::GAME_START, handleGameStart);
     client.getCallbackManager().registerCallback(PacketType::GAME_END, handleGameEnd);
     client.getCallbackManager().registerCallback(PacketType::BOARD_UPDATE, handleBoardUpdate);
+    client.getCallbackManager().registerCallback(PacketType::TILE_PREVIEW, handleTilePreview);
 
     client.startReceiving();
 

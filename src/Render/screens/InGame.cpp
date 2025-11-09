@@ -4,6 +4,7 @@
 #include "Render/utils/TileRenderer.hpp"
 #include "Render/utils/Theme.hpp"
 #include "Render/utils/Element.hpp"
+#include "Render/utils/Tooltip.hpp"
 #include "Game/Tile.hpp"
 #include "Game/PlacementRules.hpp"
 #include "Client.hpp"
@@ -200,6 +201,49 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     Element::centerH(help, static_cast<float>(ws.x), static_cast<float>(ws.y) - 30);
     help.setFillColor(sf::Color(150, 150, 150));
     window.draw(help);
+    
+    // tooltip au survol d'une case
+    if (s_hoverRow >= 0 && s_hoverCol >= 0 && s_hoverRow < bs && s_hoverCol < bs) {
+        int cellValue = board.getCellValue(s_hoverRow, s_hoverCol);
+        std::string tooltipText = "";
+        
+        if (cellValue == -1) {
+            // case vide, pas de tooltip
+        } else if (cellValue == 99) {
+            // pierre
+            tooltipText = "This is a stone tile";
+        } else if (cellValue == 100) {
+            // bonus échange (non capturé, sinon ce serait une case joueur)
+            tooltipText = "This is a bonus square";
+        } else if (cellValue == 101) {
+            // bonus pierre
+            tooltipText = "This is a stone bonus square";
+        } else if (cellValue == 102) {
+            // bonus vol
+            tooltipText = "This is a robbery bonus square";
+        } else if (cellValue >= 0 && cellValue < 9) {
+            // case d'un joueur
+            const auto& lobbies = gameState.getLobbies();
+            for (const auto& lobby : lobbies) {
+                if (lobby.lobbyId == lobbyId) {
+                    for (int i = 0; i < lobby.playerCount; ++i) {
+                        if (lobby.players[i].colorId == cellValue) {
+                            tooltipText = lobby.players[i].playerName;
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        
+        if (!tooltipText.empty()) {
+            // calcule la position de la souris pour le tooltip
+            float cellX = bx + s_hoverCol * 18.0f + 9.0f; // centre de la cellule en x
+            float cellY = by + s_hoverRow * 18.0f + 9.0f; // centre de la cellule en y
+            Tooltip::draw(window, tooltipText, cellX, cellY);
+        }
+    }
 }
 
 bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Event& event) {

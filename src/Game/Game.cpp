@@ -43,7 +43,7 @@ void Game::initializePlayers() {
             playerConnections.push_back(conn); // ajoute la connexion au joueur
             playerTurnsPlayed[conn] = 0; // initialise le nombre de tours joués à 0
             playerTiles[conn] = -1; // aucune tuile pour l'instant
-            playerExchangeCoupons[conn] = 0; // aucun coupon au départ
+            playerExchangeCoupons[conn] = 1; // chaque joueur démarre avec un coupon d'échange
             playerPendingStoneBonus[conn] = false; // aucun bonus de pierre en attente
             playerPendingRobberyBonus[conn] = false; // aucun bonus de vol en attente
         }

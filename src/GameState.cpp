@@ -111,3 +111,20 @@ std::vector<LobbyInfo> GameState::getLobbies() const {
     std::lock_guard<std::mutex> lock(lobbiesMutex);
     return lobbies;
 }
+
+std::string GameState::getPlayerNameByColorId(int lobbyId, int colorId) const {
+    std::lock_guard<std::mutex> lock(lobbiesMutex);
+    
+    for (const auto& lobby : lobbies) {
+        if (lobby.lobbyId == lobbyId) {
+            for (int i = 0; i < lobby.playerCount; ++i) {
+                if (lobby.players[i].colorId == colorId) {
+                    return std::string(lobby.players[i].playerName);
+                }
+            }
+            break;
+        }
+    }
+    
+    return ""; // joueur non trouvé
+}

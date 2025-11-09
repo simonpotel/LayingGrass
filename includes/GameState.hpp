@@ -38,6 +38,9 @@ public:
     // gestion des lobbies
     void updateLobbies(const LobbyListPacket& packet);
     std::vector<LobbyInfo> getLobbies() const;
+    
+    // utilitaire pour obtenir le nom d'un joueur par sa couleur
+    std::string getPlayerNameByColorId(int lobbyId, int colorId) const;
 
     // sélection du lobby
     void setSelectedLobby(int lobbyId) { selectedLobbyId = lobbyId; }

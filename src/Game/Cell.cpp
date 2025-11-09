@@ -34,33 +34,33 @@ void Cell::clear() {
 int Cell::toInt() const {
     switch (type) {
         case CellType::EMPTY:
-            return -1;
+            return static_cast<int>(CellType::EMPTY);
         case CellType::STONE:
-            return 99;
+            return static_cast<int>(CellType::STONE);
         case CellType::BONUS_EXCHANGE:
-            return 100;
+            return static_cast<int>(CellType::BONUS_EXCHANGE);
         case CellType::BONUS_STONE:
-            return 101;
+            return static_cast<int>(CellType::BONUS_STONE);
         case CellType::BONUS_ROBBERY:
-            return 102;
+            return static_cast<int>(CellType::BONUS_ROBBERY);
         case CellType::GRASS:
             // Pour GRASS, on retourne le playerId (0-8)
             return playerId;
         default:
-            return -1;
+            return static_cast<int>(CellType::EMPTY);
     }
 }
 
 Cell Cell::fromInt(int value) {
-    if (value == -1) {
+    if (value == static_cast<int>(CellType::EMPTY)) {
         return Cell(CellType::EMPTY);
-    } else if (value == 99) {
+    } else if (value == static_cast<int>(CellType::STONE)) {
         return Cell(CellType::STONE);
-    } else if (value == 100) {
+    } else if (value == static_cast<int>(CellType::BONUS_EXCHANGE)) {
         return Cell(CellType::BONUS_EXCHANGE);
-    } else if (value == 101) {
+    } else if (value == static_cast<int>(CellType::BONUS_STONE)) {
         return Cell(CellType::BONUS_STONE);
-    } else if (value == 102) {
+    } else if (value == static_cast<int>(CellType::BONUS_ROBBERY)) {
         return Cell(CellType::BONUS_ROBBERY);
     } else if (value >= 0 && value < 9) {
         // C'est un joueur (0-8)

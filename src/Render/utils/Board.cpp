@@ -1,5 +1,6 @@
 #include "Render/utils/Board.hpp"
 #include "GameState.hpp"
+#include "Game/Cell.hpp"
 
 namespace BoardRenderer {
     void draw(sf::RenderWindow& window, const Board& board, float x, float y, float cellSize) {
@@ -13,15 +14,15 @@ namespace BoardRenderer {
                 cell.setPosition(cellX + 1, cellY + 1); // définit la position de la cellule
                 
                 int cellValue = board.getCellValue(i, j);
-                if (cellValue == -1) { // si la cellule est vide
+                if (cellValue == static_cast<int>(CellType::EMPTY)) { // si la cellule est vide
                     cell.setFillColor(sf::Color::White);
-                } else if (cellValue == 99) { // si la cellule est une pierre (STONE)
+                } else if (cellValue == static_cast<int>(CellType::STONE)) { // si la cellule est une pierre (STONE)
                     cell.setFillColor(sf::Color(128, 128, 128));
-                } else if (cellValue == 100) { // BONUS_EXCHANGE
+                } else if (cellValue == static_cast<int>(CellType::BONUS_EXCHANGE)) { // BONUS_EXCHANGE
                     cell.setFillColor(sf::Color(255, 215, 0)); // Or
-                } else if (cellValue == 101) { // BONUS_STONE
+                } else if (cellValue == static_cast<int>(CellType::BONUS_STONE)) { // BONUS_STONE
                     cell.setFillColor(sf::Color(64, 64, 64)); // Gris foncé
-                } else if (cellValue == 102) { // BONUS_ROBBERY
+                } else if (cellValue == static_cast<int>(CellType::BONUS_ROBBERY)) { // BONUS_ROBBERY
                     cell.setFillColor(sf::Color(255, 0, 127)); // Rose foncé
                 } else if (cellValue >= 0 && cellValue < 9) { // si la cellule est remplie avec une couleur (GRASS)
                     cell.setFillColor(GameState::PLAYERS_COLORS[cellValue]);

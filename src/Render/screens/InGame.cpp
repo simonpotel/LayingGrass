@@ -7,6 +7,7 @@
 #include "Render/utils/Tooltip.hpp"
 #include "Game/Tile.hpp"
 #include "Game/PlacementRules.hpp"
+#include "Game/Cell.hpp"
 #include "Client.hpp"
 #include <sstream>
 #include <algorithm>
@@ -207,34 +208,23 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
         int cellValue = board.getCellValue(s_hoverRow, s_hoverCol);
         std::string tooltipText = "";
         
-        if (cellValue == -1) {
+        if (cellValue == static_cast<int>(CellType::EMPTY)) {
             // case vide, pas de tooltip
-        } else if (cellValue == 99) {
+        } else if (cellValue == static_cast<int>(CellType::STONE)) {
             // pierre
             tooltipText = "This is a stone tile";
-        } else if (cellValue == 100) {
+        } else if (cellValue == static_cast<int>(CellType::BONUS_EXCHANGE)) {
             // bonus échange (non capturé, sinon ce serait une case joueur)
             tooltipText = "This is a bonus square";
-        } else if (cellValue == 101) {
+        } else if (cellValue == static_cast<int>(CellType::BONUS_STONE)) {
             // bonus pierre
             tooltipText = "This is a stone bonus square";
-        } else if (cellValue == 102) {
+        } else if (cellValue == static_cast<int>(CellType::BONUS_ROBBERY)) {
             // bonus vol
             tooltipText = "This is a robbery bonus square";
         } else if (cellValue >= 0 && cellValue < 9) {
             // case d'un joueur
-            const auto& lobbies = gameState.getLobbies();
-            for (const auto& lobby : lobbies) {
-                if (lobby.lobbyId == lobbyId) {
-                    for (int i = 0; i < lobby.playerCount; ++i) {
-                        if (lobby.players[i].colorId == cellValue) {
-                            tooltipText = lobby.players[i].playerName;
-                            break;
-                        }
-                    }
-                    break;
-                }
-            }
+            tooltipText = gameState.getPlayerNameByColorId(lobbyId, cellValue);
         }
         
         if (!tooltipText.empty()) {

@@ -12,7 +12,13 @@
 #include <cstring>
 
 Game::Game(int lobbyId, Lobby* lobby)
-    : lobbyId(lobbyId), lobby(lobby), board(20), currentTurnIndex(0), turnCount(0), winnerId(-1), rng(std::random_device{}()), awaitingFinalCoupons(false) {
+    : lobbyId(lobbyId), lobby(lobby), currentTurnIndex(0), turnCount(0), winnerId(-1), rng(std::random_device{}()), awaitingFinalCoupons(false) {
+    // détermine la taille de la grille selon le nombre de joueurs
+    // 2-4 joueurs : grille 20x20, 5-9 joueurs : grille 30x30
+    int playerCount = lobby->getPlayerCount();
+    int boardSize = (playerCount >= 2 && playerCount <= 4) ? 20 : 30;
+    board = Board(boardSize); // initialise le board avec la bonne taille
+    
     initializePlayers();
     placeExchangeCoupons();
     

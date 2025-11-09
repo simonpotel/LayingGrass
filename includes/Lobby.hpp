@@ -26,7 +26,7 @@ public:
     void clear(); // vide le lobby et le réinitialise
     void broadcast(PacketType type, const void* data, size_t size) const; // envoie un paquet à tous les joueurs du lobby
     int getPlayerCount() const { return connections.size(); } // retourne le nombre de joueurs connectés au lobby
-    bool isFull() const { return connections.size() >= 2; } // retourne true si le lobby est plein (2 joueurs max)
+    bool isFull() const { return connections.size() >= 9; } // retourne true si le lobby est plein (9 joueurs max)
     bool canAcceptPlayers() const { return !gameStarted && !isFull(); } // retourne true si le lobby peut accepter des joueurs
     bool hasPlayerName(const std::string& name) const; // vérifie si un nom de joueur existe déjà dans le lobby
     bool hasColor(int colorId) const; // vérifie si une couleur existe déjà dans le lobby

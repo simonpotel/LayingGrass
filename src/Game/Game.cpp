@@ -12,7 +12,7 @@
 #include <cstring>
 
 Game::Game(int lobbyId, Lobby* lobby)
-    : lobbyId(lobbyId), lobby(lobby), currentTurnIndex(0), turnCount(0), winnerId(-1), rng(std::random_device{}()), awaitingFinalCoupons(false) {
+    : lobbyId(lobbyId), lobby(lobby), currentTurnIndex(0), turnCount(0), winnerId(-1), rng(std::random_device{}()), awaitingFinalCoupons(false), tileQueueIndex(0) {
     // détermine la taille de la grille selon le nombre de joueurs
     // 2-4 joueurs : grille 20x20, 5-9 joueurs : grille 30x30
     int playerCount = lobby->getPlayerCount();
@@ -20,6 +20,7 @@ Game::Game(int lobbyId, Lobby* lobby)
     board = Board(boardSize); // initialise le board avec la bonne taille
     
     initializePlayers();
+    initializeTileQueue(); // initialise la queue de tuiles prédéfinie mais aléatoire
     placeExchangeCoupons();
     
     int firstPlayer = getCurrentPlayerConnection();
@@ -49,6 +50,31 @@ void Game::initializePlayers() {
     
     std::shuffle(turnOrder.begin(), turnOrder.end(), rng); // mélange la liste des identifiants des joueurs dans l'ordre du tour avec le générateur de nombres aléatoires
     currentTurnIndex = 0; // définit l'index du joueur dont c'est le tour
+}
+
+void Game::initializeTileQueue() {
+    int playerCount = lobby->getPlayerCount();
+    // calcule le nombre de tuiles nécessaires : 10.67 par joueur, arrondi
+    // cela inclut la tuile de départ (1x1) + 9 tuiles pour les tours + quelques tuiles en plus pour les coupons
+    int totalTilesNeeded = static_cast<int>(std::round(playerCount * 10.67));
+    
+    // crée une liste de toutes les 96 tuiles possibles
+    tileQueue.clear();
+    tileQueue.reserve(96);
+    for (int i = 0; i < static_cast<int>(TileId::TOTAL_TILES); ++i) {
+        tileQueue.push_back(i);
+    }
+    
+    // mélange la queue de manière aléatoire (ordre prédéterminé mais aléatoire)
+    std::shuffle(tileQueue.begin(), tileQueue.end(), rng);
+    
+    // ne garde que le nombre de tuiles nécessaires
+    // note: la tuile de départ (TILE_0) n'est pas dans cette queue, elle est donnée séparément
+    if (totalTilesNeeded < static_cast<int>(tileQueue.size())) {
+        tileQueue.resize(totalTilesNeeded);
+    }
+    
+    tileQueueIndex = 0; // réinitialise l'index
 }
 
 int Game::getPlayerColorId(int connection) const {
@@ -95,7 +121,7 @@ void Game::handleCellClick(int connection, int row, int col, int rotation, bool 
         return;
     }
     
-    // Vérifie que le joueur a une tuile
+    // vérifie que le joueur a une tuile
     if (playerTiles.find(connection) == playerTiles.end() || playerTiles[connection] == -1) {
         return; // pas de tuile à placer
     }
@@ -148,7 +174,7 @@ void Game::handleCellClick(int connection, int row, int col, int rotation, bool 
     // placement réussi
     playerTiles[connection] = -1; // retire la tuile du joueur après placement
     playerTurnsPlayed[connection]++;
-    turnCount++; // incrémente le nombre de tours
+    turnCount++; // incrémente le nombre d'actions individuelles
     
     if (isGameOver()) { // si la partie est terminée
         endGame(); // termine la partie
@@ -160,9 +186,11 @@ void Game::handleCellClick(int connection, int row, int col, int rotation, bool 
 }
 
 void Game::nextTurn() {
+    // si on a fait un tour complet (tous les joueurs ont joué), on passe au tour suivant
+    // sinon, on passe juste au joueur suivant
     currentTurnIndex = (currentTurnIndex + 1) % turnOrder.size(); // passe au joueur suivant
     
-    // Distribue une nouvelle tuile au joueur dont c'est le tour
+    // distribue une nouvelle tuile au joueur dont c'est le tour
     int nextPlayer = getCurrentPlayerConnection();
     if (nextPlayer != -1) {
         giveTileToPlayer(nextPlayer);
@@ -171,10 +199,18 @@ void Game::nextTurn() {
 
 void Game::giveTileToPlayer(int connection, bool forceRandom) {
     if (isFirstTurnForPlayer(connection) && !forceRandom) {
+        // premier tour : tuile 1x1 (TILE_0)
         playerTiles[connection] = static_cast<int>(TileId::TILE_0);
     } else {
-        std::uniform_int_distribution<int> tileDist(0, static_cast<int>(TileId::TOTAL_TILES) - 1);
-        playerTiles[connection] = tileDist(rng);
+        // distribue depuis la queue de tuiles prédéfinie
+        if (tileQueueIndex < tileQueue.size()) {
+            playerTiles[connection] = tileQueue[tileQueueIndex];
+            tileQueueIndex++;
+        } else {
+            // si la queue est épuisée, génère aléatoirement (ne devrait pas arriver)
+            std::uniform_int_distribution<int> tileDist(0, static_cast<int>(TileId::TOTAL_TILES) - 1);
+            playerTiles[connection] = tileDist(rng);
+        }
     }
 }
 
@@ -238,9 +274,9 @@ int Game::getCurrentPlayerTileId(int connection) const {
 bool Game::isFirstTurnForPlayer(int connection) const {
     auto it = playerTurnsPlayed.find(connection);
     if (it != playerTurnsPlayed.end()) {
-        return it->second == 0; // Premier tour si aucun tour joué
+        return it->second == 0; // premier tour si aucun tour joué
     }
-    return true; // Si pas trouvé, on considère que c'est le premier tour
+    return true; // si pas trouvé, on considère que c'est le premier tour
 }
 
 void Game::addExchangeCoupon(int connection, int count) {
@@ -282,12 +318,12 @@ bool Game::placeTile(int connection, int tileId, int anchorRow, int anchorCol) {
         return false;
     }
     
-    // Place tous les blocs de la tuile
+    // place tous les blocs de la tuile
     for (const auto& [blockRow, blockCol] : tile.blocks) {
         int actualRow = anchorRow + blockRow;
         int actualCol = anchorCol + blockCol;
         
-        // Place la cellule avec la couleur du joueur
+        // place la cellule avec la couleur du joueur
         board.setCell(actualRow, actualCol, Cell(colorId));
     }
     
@@ -319,14 +355,14 @@ int Game::getCurrentPlayerConnection() const {
 
 void Game::broadcastBoardUpdate() {
     BoardUpdatePacket packet; // paquet de mise à jour de la grille
-    memset(&packet, 0, sizeof(packet)); // Initialise le packet à 0
+    memset(&packet, 0, sizeof(packet)); // initialise le packet à 0
     packet.lobbyId = lobbyId; // définit l'identifiant du lobby
     packet.size = board.getSize(); // définit la taille de la grille
     
     int currentPlayerConn = getCurrentPlayerConnection(); // obtient le descripteur de socket du joueur dont c'est le tour
     packet.currentTurnColorId = getPlayerColorId(currentPlayerConn); // obtient l'identifiant de la couleur du joueur dont c'est le tour
     
-    // Récupère la tuile du joueur actif
+    // récupère la tuile du joueur actif
     packet.currentPlayerTileId = getCurrentPlayerTileId(currentPlayerConn);
     for (int i = 0; i < 9; ++i) {
         packet.exchangeCoupons[i] = 0;
@@ -338,7 +374,26 @@ void Game::broadcastBoardUpdate() {
         }
     }
     
-    packet.turnCount = turnCount; // définit le nombre de tours
+    // calcule le nombre de tours complets (tous les joueurs ont joué une fois = 1 tour)
+    // le nombre de tours complets est le minimum de tours joués par n'importe quel joueur
+    int completedRounds = 0;
+    if (!playerConnections.empty()) {
+        bool first = true;
+        for (int conn : playerConnections) {
+            auto it = playerTurnsPlayed.find(conn);
+            if (it != playerTurnsPlayed.end()) {
+                if (first) {
+                    completedRounds = it->second;
+                    first = false;
+                } else {
+                    completedRounds = std::min(completedRounds, it->second); // trouve le minimum
+                }
+            }
+        }
+    }
+    // les tours commencent à 1, donc on ajoute 1 au nombre de tours complets
+    // limite à 9 maximum (quand tous les joueurs ont joué 9 tours)
+    packet.turnCount = std::min(completedRounds + 1, 9); // définit le nombre de tours complets (1-9)
     packet.gameOver = isGameOver(); // définit si la partie est terminée
     packet.winnerId = winnerId; // définit l'identifiant de la couleur du gagnant
     
@@ -394,6 +449,25 @@ int Game::getPlayerLargestSquare(int playerId) const {
     }
     
     return maxSquare;
+}
+
+bool Game::isGameOver() const {
+    // la partie est terminée quand tous les joueurs ont joué 9 tours (9 tours complets)
+    const int ROUNDS_PER_PLAYER = 9;
+    
+    if (playerConnections.empty()) {
+        return false;
+    }
+    
+    // vérifie que tous les joueurs ont joué au moins 9 tours
+    for (int conn : playerConnections) {
+        auto it = playerTurnsPlayed.find(conn);
+        if (it == playerTurnsPlayed.end() || it->second < ROUNDS_PER_PLAYER) {
+            return false; // au moins un joueur n'a pas encore joué 9 tours
+        }
+    }
+    
+    return true; // tous les joueurs ont joué 9 tours
 }
 
 bool Game::hasRemainingCoupons() const {

@@ -14,7 +14,7 @@ public:
     
     void update(); // met à jour le jeu
     void handleCellClick(int connection, int row, int col, int rotation, bool flippedH, bool flippedV, bool useCoupon); // gère le clic sur une cellule ou l'utilisation d'un coupon
-    bool isGameOver() const { return turnCount >= 9; } // retourne true si la partie est terminée
+    bool isGameOver() const; // retourne true si tous les joueurs ont joué 9 tours complets
     int getWinner() const { return winnerId; } // retourne l'identifiant de la couleur du gagnant
     int getCurrentPlayerConnection() const; // retourne le descripteur de socket du joueur dont c'est le tour
     Board* getBoard() { return &board; } // retourne la grille du jeu
@@ -36,6 +36,7 @@ public:
     
 private:
     void initializePlayers(); // initialise les joueurs du jeu
+    void initializeTileQueue(); // initialise la queue de tuiles prédéfinie mais aléatoire
     void nextTurn(); // passe au joueur suivant et distribue une nouvelle tuile
     void endGame(); // termine la partie
     int getPlayerColorId(int connection) const; // retourne l'identifiant de la couleur du joueur
@@ -59,6 +60,10 @@ private:
     std::unordered_map<int, int> playerTiles; // tuile actuelle de chaque joueur
     std::unordered_map<int, int> playerTurnsPlayed; // nombre de tours joués par chaque joueur
     std::unordered_map<int, int> playerExchangeCoupons; // coupons d'échange disponibles par joueur
+    
+    // Queue de tuiles prédéfinie mais aléatoire
+    std::vector<int> tileQueue; // queue des tuiles à distribuer (ordre prédéterminé mais aléatoire)
+    size_t tileQueueIndex; // index actuel dans la queue de tuiles
     
     std::mt19937 rng; // générateur de nombres aléatoires
     bool awaitingFinalCoupons; // true si la partie attend que les joueurs utilisent/écartent leurs coupons

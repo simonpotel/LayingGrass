@@ -13,7 +13,7 @@ public:
     ~Game();
     
     void update(); // met à jour le jeu
-    void handleCellClick(int connection, int row, int col, int rotation, bool flippedH, bool flippedV, bool useCoupon); // gère le clic sur une cellule ou l'utilisation d'un coupon
+    void handleCellClick(int connection, int row, int col, int rotation, bool flippedH, bool flippedV, bool useCoupon, int couponChoice); // gère le clic sur une cellule ou l'utilisation d'un coupon
     bool isGameOver() const; // retourne true si tous les joueurs ont joué 9 tours complets
     int getWinner() const { return winnerId; } // retourne l'identifiant de la couleur du gagnant
     int getCurrentPlayerConnection() const; // retourne le descripteur de socket du joueur dont c'est le tour
@@ -48,6 +48,7 @@ private:
     bool canPlaceTile(int connection, int tileId, int anchorRow, int anchorCol) const; // Vérifie si une tuile peut être placée
     bool placeTile(int connection, int tileId, int anchorRow, int anchorCol); // Place une tuile sur le plateau
     void placeExchangeCoupons(); // positionne des cases coupon sur le plateau
+    void ensureUpcomingTiles(size_t count); // vérifie qu'il y a suffisamment de tuiles à venir
     void computeWinner(); // calcule le gagnant en fonction du territoire
     void finalizeWinnerIfReady(); // termine la partie si tous les coupons sont utilisés
     

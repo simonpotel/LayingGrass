@@ -99,7 +99,7 @@ void handleCellClick(Player* player, const void* data, size_t size) {
     }
     
     game->handleCellClick(player->connection, packet->row, packet->col, 
-        packet->rotation, packet->flippedH, packet->flippedV, packet->useCoupon);
+        packet->rotation, packet->flippedH, packet->flippedV, packet->useCoupon, packet->couponChoice);
 }
 
 void handlePlaceStone(Player* player, const void* data, size_t size) {

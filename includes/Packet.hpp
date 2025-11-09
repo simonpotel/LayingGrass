@@ -77,6 +77,7 @@ struct BoardUpdatePacket {
     int exchangeCoupons[9]; // coupons d'échange par couleur
     bool pendingStoneBonus[9]; // bonus de pierre en attente par couleur
     bool pendingRobberyBonus[9]; // bonus de vol en attente par couleur
+    int upcomingTiles[5]; // prochaines tuiles disponibles dans la file
 };
 
 struct CellClickPacket {
@@ -87,6 +88,7 @@ struct CellClickPacket {
     bool flippedH; // flip horizontal de la tuile
     bool flippedV; // flip vertical de la tuile
     bool useCoupon; // true si on souhaite utiliser un coupon
+    int couponChoice; // index de la tuile choisie avec le coupon (0-4) ou -1
 };
 
 struct StartGameRequestPacket {

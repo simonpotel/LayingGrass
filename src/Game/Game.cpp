@@ -4,6 +4,7 @@
 #include "Game/PlacementRules.hpp"
 #include "Packet.hpp"
 #include <algorithm>
+#include <cstddef>
 #include <random>
 #include <cmath>
 #include <numeric>
@@ -97,7 +98,7 @@ void Game::update() {
     // cette méthode est appelée en continu par la boucle du serveur, donc on évite de spammer
 }
 
-void Game::handleCellClick(int connection, int row, int col, int rotation, bool flippedH, bool flippedV, bool useCoupon) {
+void Game::handleCellClick(int connection, int row, int col, int rotation, bool flippedH, bool flippedV, bool useCoupon, int couponChoice) {
     if (useCoupon) {
         int currentPlayerConn = getCurrentPlayerConnection();
         if (!isGameOver()) {
@@ -108,8 +109,33 @@ void Game::handleCellClick(int connection, int row, int col, int rotation, bool 
                 return;
             }
 
+            if (couponChoice < 0 || couponChoice > 4) {
+                return;
+            }
+
+            ensureUpcomingTiles(static_cast<size_t>(couponChoice) + 1);
+            if (tileQueueIndex + static_cast<size_t>(couponChoice) >= tileQueue.size()) {
+                return;
+            }
+
             playerExchangeCoupons[connection] = std::max(0, playerExchangeCoupons[connection] - 1);
-            giveTileToPlayer(connection, true);
+
+            size_t start = tileQueueIndex;
+            size_t choiceIndex = start + static_cast<size_t>(couponChoice);
+            std::vector<int> recycled;
+            recycled.reserve(static_cast<size_t>(couponChoice));
+            for (int i = 0; i < couponChoice; ++i) {
+                recycled.push_back(tileQueue[start + static_cast<size_t>(i)]);
+            }
+
+            int chosenTile = tileQueue[choiceIndex];
+            tileQueue.erase(tileQueue.begin() + static_cast<std::ptrdiff_t>(start),
+                            tileQueue.begin() + static_cast<std::ptrdiff_t>(choiceIndex + 1));
+            tileQueue.insert(tileQueue.end(), recycled.begin(), recycled.end());
+
+            playerTiles[connection] = chosenTile;
+            tileQueueIndex = start;
+
             broadcastBoardUpdate();
             return;
         }
@@ -240,13 +266,8 @@ void Game::nextTurn() {
             // premier tour ou a déjà une tuile : on lui donne une tuile normalement
             giveTileToPlayer(nextPlayer);
         } else {
-            // le joueur n'a pas de tuile et ce n'est pas son premier tour : il a été volé
-            // on passe son tour sans lui donner de tuile
-            std::cout << "[GAME] [NEXT_TURN] Player " << nextPlayer << " has no tile (stolen), skipping turn" << std::endl;
-            playerTurnsPlayed[nextPlayer]++; // compte quand même le tour comme joué
-            turnCount++; // incrémente le nombre d'actions
-            // passe au joueur suivant
-            nextTurn(); // récursion pour passer au joueur suivant
+            std::cout << "[GAME] [NEXT_TURN] Player " << nextPlayer << " has no tile available, assigning a new one" << std::endl;
+            giveTileToPlayer(nextPlayer, true);
         }
     }
 }
@@ -319,22 +340,43 @@ void Game::placeExchangeCoupons() {
     placeBonusType(CellType::BONUS_ROBBERY, robberyToPlace);
 }
 
+void Game::ensureUpcomingTiles(size_t count) {
+    if (tileQueue.empty()) {
+        return;
+    }
+
+    while (tileQueueIndex + count > tileQueue.size()) {
+        if (tileQueueIndex == 0) {
+            break;
+        }
+        tileQueue.insert(tileQueue.end(), tileQueue.begin(), tileQueue.begin() + static_cast<std::ptrdiff_t>(tileQueueIndex));
+        tileQueue.erase(tileQueue.begin(), tileQueue.begin() + static_cast<std::ptrdiff_t>(tileQueueIndex));
+        tileQueueIndex = 0;
+    }
+}
+
 bool Game::useExchangeCoupon(int connection, int row, int col) {
     if (playerExchangeCoupons[connection] <= 0) {
         return false;
     }
 
     if (row < 0 || col < 0) {
-        playerExchangeCoupons[connection] = 0;
+        playerExchangeCoupons[connection] = std::max(0, playerExchangeCoupons[connection] - 1);
         return true;
-    }
-
-    if (!board.isValidPosition(row, col) || !board.isEmpty(row, col)) {
-        return false;
     }
 
     int colorId = getPlayerColorId(connection);
     if (colorId == -1) {
+        return false;
+    }
+
+    if (!board.isValidPosition(row, col)) {
+        return false;
+    }
+
+    Tile tile = Tile::getTile(Tile::fromInt(static_cast<int>(TileId::TILE_0)));
+    bool firstTurn = !PlacementRules::playerHasCells(board, colorId);
+    if (!PlacementRules::canPlaceTile(board, tile, row, col, colorId, firstTurn)) {
         return false;
     }
 
@@ -596,6 +638,15 @@ void Game::broadcastBoardUpdate() {
             packet.exchangeCoupons[color] = getExchangeCouponCount(conn);
             packet.pendingStoneBonus[color] = hasPendingStoneBonus(conn);
             packet.pendingRobberyBonus[color] = hasPendingRobberyBonus(conn);
+        }
+    }
+
+    ensureUpcomingTiles(5);
+    for (int i = 0; i < 5; ++i) {
+        if (tileQueueIndex + static_cast<size_t>(i) < tileQueue.size()) {
+            packet.upcomingTiles[i] = tileQueue[tileQueueIndex + static_cast<size_t>(i)];
+        } else {
+            packet.upcomingTiles[i] = -1;
         }
     }
     

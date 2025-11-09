@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include <mutex>
+#include <array>
 
 namespace sf {
     class Color;
@@ -78,6 +79,7 @@ public:
     int getCurrentPlayerTileId() const { return currentPlayerTileId; }
     int getExchangeCouponCount() const { return exchangeCouponCount; }
     void setExchangeCouponCount(int count) { exchangeCouponCount = count; }
+    const std::array<int, 5>& getUpcomingTiles() const { return upcomingTiles; }
     bool hasPendingStoneBonus() const { return pendingStoneBonus; }
     bool hasPendingRobberyBonus() const { return pendingRobberyBonus; }
     
@@ -135,6 +137,7 @@ private:
     int exchangeCouponCount; // nombre de coupons d'échange du joueur
     bool pendingStoneBonus; // true si le joueur doit placer une pierre immédiatement
     bool pendingRobberyBonus; // true si le joueur doit voler une tuile immédiatement
+    std::array<int, 5> upcomingTiles; // prochaines tuiles disponibles pour l'échange
     
     // prévisualisation de placement
     int previewRow; // ligne de prévisualisation (-1 si pas de prévisualisation)

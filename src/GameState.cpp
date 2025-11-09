@@ -44,6 +44,7 @@ GameState::GameState()
       previewFlippedH(false),
       previewFlippedV(false),
       previewColorId(-1) {
+    upcomingTiles.fill(-1);
 }
 
 GameState::~GameState() {
@@ -96,6 +97,10 @@ void GameState::updateBoard(const BoardUpdatePacket& packet) {
         pendingStoneBonus = false;
         pendingRobberyBonus = false;
     }
+
+    for (int i = 0; i < 5; ++i) {
+        upcomingTiles[i] = packet.upcomingTiles[i];
+    }
     
     if (oldTileId != currentPlayerTileId) {
         resetTileTransform();
@@ -127,6 +132,7 @@ void GameState::resetGameData() {
     exchangeCouponCount = 0;
     pendingStoneBonus = false;
     pendingRobberyBonus = false;
+    upcomingTiles.fill(-1);
 }
 
 std::vector<LobbyInfo> GameState::getLobbies() const {

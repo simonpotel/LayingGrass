@@ -265,6 +265,11 @@ void Server::gameUpdateLoop() {
                     }
                     for (int i = 0; i < 9; ++i) {
                         emptyBoardPacket.exchangeCoupons[i] = 0;
+                        emptyBoardPacket.pendingStoneBonus[i] = false;
+                        emptyBoardPacket.pendingRobberyBonus[i] = false;
+                    }
+                    for (int i = 0; i < 5; ++i) {
+                        emptyBoardPacket.upcomingTiles[i] = -1;
                     }
                     
                     lobby->broadcast(PacketType::BOARD_UPDATE, &emptyBoardPacket, sizeof(BoardUpdatePacket)); // envoie le board vide à tous les joueurs du lobby

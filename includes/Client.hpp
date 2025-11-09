@@ -17,7 +17,7 @@ public:
 
     // packets
     bool sendConnectRequest(const char* playerName, int lobbyId, int colorId); // envoie une demande de connexion au serveur avec lobby et couleur
-    bool sendCellClick(int lobbyId, int row, int col, int rotation, bool flippedH, bool flippedV, bool useCoupon = false); // envoie un clic sur une cellule (ou utilise un coupon)
+    bool sendCellClick(int lobbyId, int row, int col, int rotation, bool flippedH, bool flippedV, bool useCoupon = false, int couponChoice = -1); // envoie un clic sur une cellule (ou utilise un coupon)
     bool sendStartGameRequest(int lobbyId); // envoie une demande de lancer la partie
     bool sendTilePreview(int lobbyId, int row, int col, int rotation, bool flippedH, bool flippedV, int colorId); // envoie une prévisualisation de placement de tuile
     bool sendPlaceStone(int lobbyId, int row, int col); // envoie une demande de placer une pierre

@@ -2,29 +2,29 @@
 
 ## Table of Contents
 
-1. [Building from Source](#building-from-source)
-2. [Tests](#tests)
-3. [Game Classes](#game-classes)
+1. [Building from Source](#1-building-from-source)
+2. [Game Classes](#2-game-classes)
    - [Board](#board)
    - [Cell](#cell)
    - [Tile](#tile)
    - [PlacementRules](#placementrules)
    - [Game](#game)
-4. [Client Classes](#client-classes)
+3. [Client Classes](#3-client-classes)
    - [Client](#client)
    - [GameState](#gamestate)
    - [Render](#render)
-5. [Server Classes](#server-classes)
+4. [Server Classes](#4-server-classes)
    - [Server](#server)
    - [Lobby](#lobby)
    - [LobbyManager](#lobbymanager)
    - [Player](#player)
-6. [Network Classes](#network-classes)
+5. [Network Classes](#5-network-classes)
    - [Packet](#packet)
    - [PacketCallback](#packetcallback)
-7. [Testing](#testing)
+6. [Testing](#6-testing)
+7. [CI/CD GitHub Actions](#7-cicd-github-actions)
 
-## Building from Source
+## 1. Building from Source
 
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)
@@ -79,7 +79,9 @@ build\Release\LayingGrassServer.exe
 build\Release\LayingGrassClient.exe
 ```
 
-## Game Classes
+## 2. Game Classes
+
+The game logic is structured using core classes that represent the game state and rules. `Board`, `Cell`, `Tile`, and `Player` serve as logical structures used both on the client and server sides for game calculations. These classes provide a unified model that ensures consistency between client rendering and server-side game logic.
 
 ### Board
 
@@ -215,7 +217,7 @@ class Game {
 - Win condition: Game ends when all players complete 9 rounds
 - Winner: Player with most territory cells + exchange coupons
 
-## Client Classes
+## 3. Client Classes
 
 ### Client
 
@@ -247,7 +249,7 @@ class Client {
 
 ### GameState
 
-Manages client-side game state and state machine.
+Manages client-side game state and state machine. The `GameState` design is derived from the packet structure, allowing asynchronous packet updates to modify a state object that is used in parallel by all other classes for game calculations.
 
 **Structure:**
 ```cpp
@@ -285,13 +287,13 @@ class GameState {
 - `IN_LOBBY` → `IN_GAME` (game starts)
 - `IN_GAME` → `GAME_END` (game ends)
 
-Thread-safe: Mutex protects shared state between network thread and main rendering thread.
+Thread-safe: Mutex protects shared state between network thread and main rendering thread. The state object is used by `Tile`, `Board`, and other game classes for rendering and game calculations.
 
 ### Render
 
 ![SFML](https://img.shields.io/badge/SFML-8CC445?style=for-the-badge&logo=sfml&logoColor=white)
 
-Abstract base class for screen renderers using SFML for graphics. Factory pattern creates appropriate renderer for current state.
+Abstract base class for screen renderers using SFML for graphics. SFML enables rapid creation of structures and renderings. Through abstraction, the rendering system has been decomposed into components, making renders fast and simple to implement.
 
 **Structure:**
 ```cpp
@@ -314,9 +316,9 @@ public:
 - `TileViewer` - Debug view of all tiles
 
 **Rendering Flow:**
-Main loop in `client.cpp`: poll events → `handleInput()` → `render()` → display. Each screen handles its own input and rendering logic using SFML.
+Main loop in `client.cpp`: poll events → `handleInput()` → `render()` → display. Each screen handles its own input and rendering logic using SFML. The component-based architecture allows for quick development and easy maintenance of different screen types.
 
-## Server Classes
+## 4. Server Classes
 
 ### Server
 
@@ -418,11 +420,11 @@ class Player {
 
 Created when client connects, removed on disconnect. Stores connection info and lobby assignment.
 
-## Network Classes
+## 5. Network Classes
 
 ### Packet
 
-Binary protocol over TCP sockets with header + payload structure.
+Binary protocol over TCP sockets with header + payload structure. This network architecture was designed to be as modular as possible for a video game, allowing easy extension and maintenance of the communication protocol.
 
 **Packet Header:**
 ```cpp
@@ -455,6 +457,8 @@ enum class PacketType {
 - `Packet::sendPacket()` - Sends header + payload with network byte order conversion
 - `Packet::receivePacket()` - Receives header, converts byte order, allocates and receives payload
 
+The modular design allows for easy addition of new packet types and handlers without modifying the core networking infrastructure.
+
 ### PacketCallback
 
 Template class managing packet callbacks for routing.
@@ -476,14 +480,14 @@ class PacketCallbackManager {
 - `getCallback(type)` - Retrieves callback (returns nullptr if not found)
 - `unregisterCallback(type)` - Removes callback
 
-Packets are routed to registered callbacks based on `PacketType` in header.
+Packets are routed to registered callbacks based on `PacketType` in header. This callback system contributes to the modular architecture, allowing handlers to be registered and modified independently.
 
-## Testing
+## 6. Testing
 
 ![GoogleTest](https://img.shields.io/badge/GoogleTest-4285F4?style=for-the-badge&logo=google&logoColor=white)
-![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
 
-Run tests to execute all test cases and verify coverage of the requirements from the specification document. 
+Testing was not mandatory, but tests were implemented to guarantee that the project fully respects all requirements from the specification document. Run tests to execute all test cases and verify coverage of the requirements.
+
 After building, run tests with:
 
 #### Linux / macOS
@@ -507,3 +511,9 @@ Or run tests directly:
 ```bash
 build\Release\LayingGrassTests.exe
 ```
+
+## 7. CI/CD GitHub Actions
+
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
+
+GitHub Actions CI/CD pipeline was implemented to quickly generate executables for both Linux and Windows platforms, and to enable rapid deployment to a remote server. The automated build process ensures consistent builds across different environments and simplifies the distribution and deployment workflow.

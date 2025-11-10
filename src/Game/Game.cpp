@@ -14,7 +14,7 @@
 #include <iostream>
 
 Game::Game(int lobbyId, Lobby* lobby)
-    : lobbyId(lobbyId), lobby(lobby), currentTurnIndex(0), turnCount(0), winnerId(-1), rng(std::random_device{}()), awaitingFinalCoupons(false), tileQueueIndex(0) {
+    : lobbyId(lobbyId), lobby(lobby), currentTurnIndex(0), turnCount(0), winnerId(-1), rng(std::random_device{}()), awaitingFinalCoupons(false), tileQueueIndex(0), consecutiveSkips(0) {
     // détermine la taille de la grille selon le nombre de joueurs
     // 2-4 joueurs : grille 20x20, 5-9 joueurs : grille 30x30
     int playerCount = lobby->getPlayerCount();
@@ -256,23 +256,18 @@ void Game::nextTurn() {
     // distribue une nouvelle tuile au joueur dont c'est le tour
     int nextPlayer = getCurrentPlayerConnection();
     if (nextPlayer != -1) {
-        // vérifie si le joueur a déjà une tuile (par exemple s'il a été volé)
-        // si c'est son premier tour, on lui donne toujours une tuile
-        // sinon, s'il n'a pas de tuile, c'est qu'il a été volé, donc on passe son tour
         bool hasTile = (playerTiles.find(nextPlayer) != playerTiles.end() && playerTiles[nextPlayer] != -1);
         bool isFirstTurn = isFirstTurnForPlayer(nextPlayer);
         
-        if (isFirstTurn || hasTile) {
-            // premier tour ou a déjà une tuile : on lui donne une tuile normalement
+        if (isFirstTurn) {
+            consecutiveSkips = 0;
             giveTileToPlayer(nextPlayer);
+        } else if (hasTile) {
+            consecutiveSkips = 0;
         } else {
-            // le joueur n'a pas de tuile et ce n'est pas son premier tour : il a été volé
-            // on passe son tour sans lui donner de tuile
-            std::cout << "[GAME] [NEXT_TURN] Player " << nextPlayer << " has no tile (stolen), skipping turn" << std::endl;
-            playerTurnsPlayed[nextPlayer]++; // compte quand même le tour comme joué
-            turnCount++; // incrémente le nombre d'actions
-            // passe au joueur suivant
-            nextTurn(); // récursion pour passer au joueur suivant
+            consecutiveSkips = 0;
+            std::cout << "[GAME] [NEXT_TURN] Player " << nextPlayer << " has no tile (stolen), giving new tile" << std::endl;
+            giveTileToPlayer(nextPlayer, true);
         }
     }
 }
@@ -379,6 +374,15 @@ bool Game::useExchangeCoupon(int connection, int row, int col) {
         return false;
     }
 
+    const Cell& cell = board.getCell(row, col);
+    if (cell.isStone()) {
+        board.setCell(row, col, Cell(CellType::EMPTY));
+        playerExchangeCoupons[connection]--;
+        return true;
+    }
+    if (!cell.isEmpty()) {
+        return false;
+    }
     Tile tile = Tile::getTile(Tile::fromInt(static_cast<int>(TileId::TILE_0)));
     bool firstTurn = !PlacementRules::playerHasCells(board, colorId);
     if (!PlacementRules::canPlaceTile(board, tile, row, col, colorId, firstTurn)) {

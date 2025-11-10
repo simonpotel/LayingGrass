@@ -76,5 +76,6 @@ private:
     
     std::mt19937 rng; // générateur de nombres aléatoires
     bool awaitingFinalCoupons; // true si la partie attend que les joueurs utilisent/écartent leurs coupons
+    int consecutiveSkips;
 };
 

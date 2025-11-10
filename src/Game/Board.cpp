@@ -1,4 +1,5 @@
 #include "Game/Board.hpp"
+#include <iostream>
 
 Board::Board(int size) : size(size) { 
     // initialise la grille avec des cellules vides
@@ -129,11 +130,17 @@ bool Board::isBonusCaptured(int row, int col, int playerId) const {
     
     // vérifie que les 4 directions cardinales sont occupées par le même joueur
     const int directions[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+    
     for (int i = 0; i < 4; ++i) {
         int newRow = row + directions[i][0];
         int newCol = col + directions[i][1];
-        if (!isValidPosition(newRow, newCol) || !isPlayerCell(newRow, newCol, playerId)) {
-            return false; // une direction n'est pas occupée par ce joueur
+        
+        if (!isValidPosition(newRow, newCol)) {
+            return false;
+        }
+        
+        if (!isPlayerCell(newRow, newCol, playerId)) {
+            return false;
         }
     }
     

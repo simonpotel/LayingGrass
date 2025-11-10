@@ -6,12 +6,14 @@
 #include "Render/utils/Element.hpp"
 #include "Render/utils/Tooltip.hpp"
 #include "Render/utils/ConfirmDialog.hpp"
+#include "Render/utils/Button.hpp"
 #include "Game/Tile.hpp"
 #include "Game/PlacementRules.hpp"
 #include "Game/Cell.hpp"
 #include "Client.hpp"
 #include <sstream>
 #include <algorithm>
+#include <memory>
 
 extern Client* g_client;
 
@@ -24,6 +26,7 @@ namespace {
     int s_pendingRotation = 0; // rotation du placement en attente
     bool s_pendingFlippedH = false; // flip horizontal du placement en attente
     bool s_pendingFlippedV = false; // flip vertical du placement en attente
+    std::unique_ptr<Button> s_discardButton; // bouton d'abandon de tuile
     
     // applique les transformations à une tuile
     Tile applyTileTransform(const Tile& baseTile, int rotation, bool flippedH, bool flippedV) {
@@ -131,6 +134,18 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
             bonusText.setStyle(sf::Text::Bold);
             window.draw(bonusText);
         }
+    }
+    
+    // affiche le bouton d'abandon de tuile si le placement est impossible
+    if (!gameState.isGameOver() && turnId == myId && gameState.getCurrentPlayerTileId() >= 0 && 
+        !gameState.canPlaceTile() && !gameState.hasPendingStoneBonus() && !gameState.hasPendingRobberyBonus()) {
+        if (!s_discardButton) {
+            s_discardButton = std::make_unique<Button>(ix + 20.0f, iy + infoHeight + 20.0f, 210.0f, 50.0f, 
+                                                       "Abandon de tuile\n(si placement impossible)", 16);
+        }
+        s_discardButton->draw(window);
+    } else {
+        s_discardButton.reset();
     }
 
     if (gameState.isGameOver() && gameState.getWinnerId() < 0) {
@@ -561,6 +576,16 @@ bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Eve
         int turnId = gameState.getCurrentTurnColorId();
         int myId = gameState.getSelectedColor();
         if (turnId != myId) return false;
+        
+        // vérifie si le bouton d'abandon de tuile est cliqué
+        if (s_discardButton && s_discardButton->getBounds().contains(static_cast<float>(event.mouseButton.x), 
+                                                                      static_cast<float>(event.mouseButton.y))) {
+            if (g_client && !gameState.canPlaceTile() && gameState.getCurrentPlayerTileId() >= 0 &&
+                !gameState.hasPendingStoneBonus() && !gameState.hasPendingRobberyBonus()) {
+                g_client->sendDiscardTile(gameState.getCurrentLobby());
+            }
+            return false;
+        }
         
         // vérifie si le joueur a un bonus en attente
         if (gameState.hasPendingStoneBonus()) {

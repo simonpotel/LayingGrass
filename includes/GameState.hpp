@@ -82,6 +82,7 @@ public:
     const std::array<int, 5>& getUpcomingTiles() const { return upcomingTiles; }
     bool hasPendingStoneBonus() const { return pendingStoneBonus; }
     bool hasPendingRobberyBonus() const { return pendingRobberyBonus; }
+    bool canPlaceTile() const { return canPlaceTileFlag; }
     
     // gestion de la prévisualisation
     void updateTilePreview(const TilePreviewPacket& packet);
@@ -138,6 +139,7 @@ private:
     bool pendingStoneBonus; // true si le joueur doit placer une pierre immédiatement
     bool pendingRobberyBonus; // true si le joueur doit voler une tuile immédiatement
     std::array<int, 5> upcomingTiles; // prochaines tuiles disponibles pour l'échange
+    bool canPlaceTileFlag; // true si le joueur peut placer sa tuile quelque part
     
     // prévisualisation de placement
     int previewRow; // ligne de prévisualisation (-1 si pas de prévisualisation)

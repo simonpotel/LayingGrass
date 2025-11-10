@@ -142,6 +142,26 @@ void handleRobTile(Player* player, const void* data, size_t size) {
     game->robTile(player->connection, packet->targetPlayerColorId);
 }
 
+void handleDiscardTile(Player* player, const void* data, size_t size) {
+    const DiscardTilePacket* packet = (const DiscardTilePacket*)data;
+    
+    if (!g_server) {
+        return;
+    }
+    
+    Lobby* lobby = g_server->getLobbyManager().findLobbyById(packet->lobbyId);
+    if (!lobby) {
+        return;
+    }
+    
+    Game* game = lobby->getGame();
+    if (!game) {
+        return;
+    }
+    
+    game->discardTile(player->connection);
+}
+
 void handleStartGameRequest(Player* player, const void* data, size_t size) {
     const StartGameRequestPacket* packet = (const StartGameRequestPacket*)data;
     
@@ -207,6 +227,7 @@ int main() {
     server.getCallbackManager().registerCallback(PacketType::TILE_PREVIEW, handleTilePreview);
     server.getCallbackManager().registerCallback(PacketType::PLACE_STONE, handlePlaceStone);
     server.getCallbackManager().registerCallback(PacketType::ROB_TILE, handleRobTile);
+    server.getCallbackManager().registerCallback(PacketType::DISCARD_TILE, handleDiscardTile);
     server.start();
 
     std::cout << "Server started on port 5555" << std::endl;

@@ -38,6 +38,7 @@ GameState::GameState()
       exchangeCouponCount(0),
       pendingStoneBonus(false),
       pendingRobberyBonus(false),
+      canPlaceTileFlag(false),
       previewRow(-1),
       previewCol(-1),
       previewRotation(0),
@@ -92,10 +93,12 @@ void GameState::updateBoard(const BoardUpdatePacket& packet) {
         exchangeCouponCount = packet.exchangeCoupons[selectedColorId];
         pendingStoneBonus = packet.pendingStoneBonus[selectedColorId];
         pendingRobberyBonus = packet.pendingRobberyBonus[selectedColorId];
+        canPlaceTileFlag = packet.canPlaceTile[selectedColorId];
     } else {
         exchangeCouponCount = 0;
         pendingStoneBonus = false;
         pendingRobberyBonus = false;
+        canPlaceTileFlag = false;
     }
 
     for (int i = 0; i < 5; ++i) {
@@ -132,6 +135,7 @@ void GameState::resetGameData() {
     exchangeCouponCount = 0;
     pendingStoneBonus = false;
     pendingRobberyBonus = false;
+    canPlaceTileFlag = false;
     upcomingTiles.fill(-1);
 }
 

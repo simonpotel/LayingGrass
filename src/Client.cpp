@@ -121,6 +121,14 @@ bool Client::sendRobTile(int lobbyId, int targetPlayerColorId) {
     return Packet::sendPacket(socketFd, PacketType::ROB_TILE, &packet, sizeof(RobTilePacket)); // envoie la demande au serveur
 }
 
+bool Client::sendDiscardTile(int lobbyId) {
+    DiscardTilePacket packet; // structure pour abandonner une tuile
+    memset(&packet, 0, sizeof(packet)); // initialise la structure à 0
+    packet.lobbyId = lobbyId; // définit l'identifiant du lobby
+
+    return Packet::sendPacket(socketFd, PacketType::DISCARD_TILE, &packet, sizeof(DiscardTilePacket)); // envoie la demande au serveur
+}
+
 void Client::startReceiving() {
     if (receiving || !connected) {
         return; // déjà en cours de réception ou non connecté
@@ -161,6 +169,7 @@ void Client::receiveLoop() {
                     case PacketType::TILE_PREVIEW: std::cout << " (TILE_PREVIEW)"; break;
                     case PacketType::PLACE_STONE: std::cout << " (PLACE_STONE)"; break;
                     case PacketType::ROB_TILE: std::cout << " (ROB_TILE)"; break;
+                    case PacketType::DISCARD_TILE: std::cout << " (DISCARD_TILE)"; break;
                 }
                 std::cout << " Size: " << header.size << std::endl;
             }

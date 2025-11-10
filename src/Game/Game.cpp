@@ -437,6 +437,58 @@ bool Game::hasPendingRobberyBonus(int connection) const {
     return false;
 }
 
+bool Game::canPlayerPlaceTile(int connection) const {
+    // vérifie que le joueur a une tuile
+    auto tileIt = playerTiles.find(connection);
+    if (tileIt == playerTiles.end() || tileIt->second == -1) {
+        return false; // pas de tuile
+    }
+    
+    int tileId = tileIt->second;
+    int colorId = getPlayerColorId(connection);
+    if (colorId == -1) {
+        return false;
+    }
+    
+    const Tile& baseTile = Tile::getTile(Tile::fromInt(tileId));
+    if (!baseTile.isValid()) {
+        return false;
+    }
+    
+    bool isFirstTurn = isFirstTurnForPlayer(connection);
+    int size = board.getSize();
+    
+    // teste toutes les combinaisons de transformations possibles
+    for (int rotation = 0; rotation < 4; ++rotation) {
+        for (bool flippedH : {false, true}) {
+            for (bool flippedV : {false, true}) {
+                // applique les transformations
+                Tile transformedTile = baseTile;
+                for (int i = 0; i < rotation; ++i) {
+                    transformedTile = transformedTile.rotate90();
+                }
+                if (flippedH) {
+                    transformedTile = transformedTile.flipHorizontal();
+                }
+                if (flippedV) {
+                    transformedTile = transformedTile.flipVertical();
+                }
+                
+                // teste toutes les positions possibles sur le plateau
+                for (int row = 0; row < size; ++row) {
+                    for (int col = 0; col < size; ++col) {
+                        if (PlacementRules::canPlaceTile(board, transformedTile, row, col, colorId, isFirstTurn)) {
+                            return true; // placement possible trouvé
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    return false; // aucun placement possible trouvé
+}
+
 bool Game::placeStone(int connection, int row, int col) {
     // vérifie que c'est bien le tour du joueur
     int currentPlayerConn = getCurrentPlayerConnection();
@@ -550,6 +602,45 @@ bool Game::robTile(int connection, int targetPlayerColorId) {
     return true;
 }
 
+bool Game::discardTile(int connection) {
+    // vérifie que c'est bien le tour du joueur
+    int currentPlayerConn = getCurrentPlayerConnection();
+    if (connection != currentPlayerConn) {
+        return false; // ce n'est pas le tour de ce joueur
+    }
+    
+    // vérifie que le joueur a une tuile
+    auto tileIt = playerTiles.find(connection);
+    if (tileIt == playerTiles.end() || tileIt->second == -1) {
+        return false; // pas de tuile à abandonner
+    }
+    
+    // vérifie que le joueur ne peut pas placer sa tuile
+    if (canPlayerPlaceTile(connection)) {
+        return false; // le joueur peut placer sa tuile, donc pas d'abandon autorisé
+    }
+    
+    // vérifie que le joueur n'a pas de bonus en attente
+    if (hasPendingStoneBonus(connection) || hasPendingRobberyBonus(connection)) {
+        return false; // le joueur doit d'abord utiliser son bonus
+    }
+    
+    // abandonne la tuile
+    playerTiles[connection] = -1; // retire la tuile du joueur
+    playerTurnsPlayed[connection]++; // compte le tour comme joué
+    turnCount++; // incrémente le nombre d'actions
+    
+    // passe au joueur suivant
+    if (isGameOver()) {
+        endGame();
+    } else {
+        nextTurn();
+    }
+    
+    broadcastBoardUpdate();
+    return true;
+}
+
 bool Game::canPlaceTile(int connection, int tileId, int anchorRow, int anchorCol) const {
     int colorId = getPlayerColorId(connection);
     if (colorId == -1) {
@@ -636,6 +727,7 @@ void Game::broadcastBoardUpdate() {
         packet.exchangeCoupons[i] = 0;
         packet.pendingStoneBonus[i] = false;
         packet.pendingRobberyBonus[i] = false;
+        packet.canPlaceTile[i] = false;
     }
     for (int conn : playerConnections) {
         int color = getPlayerColorId(conn);
@@ -643,6 +735,7 @@ void Game::broadcastBoardUpdate() {
             packet.exchangeCoupons[color] = getExchangeCouponCount(conn);
             packet.pendingStoneBonus[color] = hasPendingStoneBonus(conn);
             packet.pendingRobberyBonus[color] = hasPendingRobberyBonus(conn);
+            packet.canPlaceTile[color] = canPlayerPlaceTile(conn);
         }
     }
 

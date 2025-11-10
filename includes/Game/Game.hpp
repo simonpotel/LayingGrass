@@ -31,8 +31,10 @@ public:
     bool hasRemainingCoupons() const; // indique si des coupons restent à utiliser
     bool placeStone(int connection, int row, int col); // place une pierre avec le bonus stone
     bool robTile(int connection, int targetPlayerColorId); // vole une tuile avec le bonus robbery
+    bool discardTile(int connection); // abandonne une tuile (si placement impossible)
     bool hasPendingStoneBonus(int connection) const; // retourne true si le joueur doit placer une pierre
     bool hasPendingRobberyBonus(int connection) const; // retourne true si le joueur doit voler une tuile
+    bool canPlayerPlaceTile(int connection) const; // vérifie si le joueur peut placer sa tuile quelque part (teste toutes les transformations)
     
     // Méthodes utilitaires pour le calcul du gagnant
     int getPlayerTerritoryCount(int playerId) const; // compte le nombre de cellules d'un joueur

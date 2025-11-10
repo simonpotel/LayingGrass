@@ -127,6 +127,7 @@ void Server::handleClient(int clientSocket) {
                     case PacketType::TILE_PREVIEW: std::cout << " (TILE_PREVIEW)"; break;
                     case PacketType::PLACE_STONE: std::cout << " (PLACE_STONE)"; break;
                     case PacketType::ROB_TILE: std::cout << " (ROB_TILE)"; break;
+                    case PacketType::DISCARD_TILE: std::cout << " (DISCARD_TILE)"; break;
                 }
                 std::cout << " Size: " << header.size;
                 if (player) {

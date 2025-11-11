@@ -151,7 +151,7 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     if (gameState.isGameOver() && gameState.getWinnerId() < 0) {
         std::string promptText;
         if (gameState.getExchangeCouponCount() > 0) {
-            promptText = "Press C: Place 1x1 tile or remove stone\nPress N: Skip coupon";
+            promptText = "Press C: Place 1x1 tile or remove stone\nPress X: Remove stone\nPress N: Skip coupon";
         } else {
             promptText = "Waiting for other players to finish coupons...";
         }
@@ -384,11 +384,14 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
                     break;
                 }
             }
-            if (gameState.getExchangeCouponCount() > 0 && hasUpcomingOptions) {
-                helpText += " | C: Select coupon";
+            if (gameState.getExchangeCouponCount() > 0) {
+                if (hasUpcomingOptions) {
+                    helpText += " | C: Select coupon";
+                }
+                helpText += " | X: Remove stone";
             }
         } else if (gameState.isGameOver() && gameState.getExchangeCouponCount() > 0) {
-            helpText += " | C: Place 1x1 tile or remove stone | N: Skip";
+            helpText += " | C: Place 1x1 tile or remove stone | X: Remove stone | N: Skip";
         }
     }
     sf::Text help = Text::createText(helpText, 16);
@@ -405,7 +408,13 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
             // case vide, pas de tooltip
         } else if (cellValue == static_cast<int>(CellType::STONE)) {
             // pierre
-            tooltipText = "This is a stone tile";
+            if (!gameState.isGameOver() && turnId == myId && gameState.getExchangeCouponCount() > 0) {
+                tooltipText = "Stone tile - Press X to remove with coupon";
+            } else if (gameState.isGameOver() && gameState.getExchangeCouponCount() > 0) {
+                tooltipText = "Stone tile - Press C or X to remove with coupon";
+            } else {
+                tooltipText = "This is a stone tile";
+            }
         } else if (cellValue == static_cast<int>(CellType::BONUS_EXCHANGE)) {
             // bonus échange (non capturé, sinon ce serait une case joueur)
             tooltipText = "Exchange bonus: Place tiles on 4 directions (N/S/E/W) to capture. Reward: 1 exchange coupon.";
@@ -520,6 +529,26 @@ bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Eve
                         }
                         if (hasOption) {
                             s_selectingCoupon = !s_selectingCoupon;
+                        }
+                    }
+                } else if (event.key.code == sf::Keyboard::X) {
+                    if (gameState.getExchangeCouponCount() > 0 && g_client && s_hoverRow >= 0 && s_hoverCol >= 0) {
+                        const Board& board = gameState.getBoard();
+                        if (board.isValidPosition(s_hoverRow, s_hoverCol)) {
+                            int cellValue = board.getCellValue(s_hoverRow, s_hoverCol);
+                            if (cellValue == static_cast<int>(CellType::EMPTY) || cellValue == static_cast<int>(CellType::STONE)) {
+                                if (cellValue == static_cast<int>(CellType::EMPTY)) {
+                                    int myId = gameState.getSelectedColor();
+                                    Tile tile = Tile::getTile(Tile::fromInt(static_cast<int>(TileId::TILE_0)));
+                                    if (tile.isValid()) {
+                                        bool firstTurn = !PlacementRules::playerHasCells(board, myId);
+                                        if (!PlacementRules::canPlaceTile(board, tile, s_hoverRow, s_hoverCol, myId, firstTurn)) {
+                                            return false;
+                                        }
+                                    }
+                                }
+                                g_client->sendCellClick(gameState.getCurrentLobby(), s_hoverRow, s_hoverCol, 0, false, false, true);
+                            }
                         }
                     }
                 }

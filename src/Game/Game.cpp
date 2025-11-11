@@ -109,34 +109,37 @@ void Game::handleCellClick(int connection, int row, int col, int rotation, bool 
                 return;
             }
 
-            if (couponChoice < 0 || couponChoice > 4) {
+            if (couponChoice >= 0 && couponChoice <= 4) {
+                ensureUpcomingTiles(static_cast<size_t>(couponChoice) + 1);
+                if (tileQueueIndex + static_cast<size_t>(couponChoice) >= tileQueue.size()) {
+                    return;
+                }
+
+                playerExchangeCoupons[connection] = std::max(0, playerExchangeCoupons[connection] - 1);
+
+                size_t start = tileQueueIndex;
+                size_t choiceIndex = start + static_cast<size_t>(couponChoice);
+                std::vector<int> recycled;
+                recycled.reserve(static_cast<size_t>(couponChoice));
+                for (int i = 0; i < couponChoice; ++i) {
+                    recycled.push_back(tileQueue[start + static_cast<size_t>(i)]);
+                }
+
+                int chosenTile = tileQueue[choiceIndex];
+                tileQueue.erase(tileQueue.begin() + static_cast<std::ptrdiff_t>(start),
+                                tileQueue.begin() + static_cast<std::ptrdiff_t>(choiceIndex + 1));
+                tileQueue.insert(tileQueue.end(), recycled.begin(), recycled.end());
+
+                playerTiles[connection] = chosenTile;
+                tileQueueIndex = start;
+
+                broadcastBoardUpdate();
                 return;
             }
-
-            ensureUpcomingTiles(static_cast<size_t>(couponChoice) + 1);
-            if (tileQueueIndex + static_cast<size_t>(couponChoice) >= tileQueue.size()) {
+            
+            if (useExchangeCoupon(connection, row, col)) {
                 return;
             }
-
-            playerExchangeCoupons[connection] = std::max(0, playerExchangeCoupons[connection] - 1);
-
-            size_t start = tileQueueIndex;
-            size_t choiceIndex = start + static_cast<size_t>(couponChoice);
-            std::vector<int> recycled;
-            recycled.reserve(static_cast<size_t>(couponChoice));
-            for (int i = 0; i < couponChoice; ++i) {
-                recycled.push_back(tileQueue[start + static_cast<size_t>(i)]);
-            }
-
-            int chosenTile = tileQueue[choiceIndex];
-            tileQueue.erase(tileQueue.begin() + static_cast<std::ptrdiff_t>(start),
-                            tileQueue.begin() + static_cast<std::ptrdiff_t>(choiceIndex + 1));
-            tileQueue.insert(tileQueue.end(), recycled.begin(), recycled.end());
-
-            playerTiles[connection] = chosenTile;
-            tileQueueIndex = start;
-
-            broadcastBoardUpdate();
             return;
         }
 

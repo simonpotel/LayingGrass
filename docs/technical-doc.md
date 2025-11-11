@@ -69,14 +69,26 @@ After building, run the game:
 
 #### Linux / macOS
 ```bash
-./build/LayingGrassServer
-./build/LayingGrassClient
+# Server
+./build/LayingGrassServer          # Default port: 5555
+./build/LayingGrassServer 8080     # Custom port: 8080
+
+# Client
+./build/LayingGrassClient                          # Default: 127.0.0.1:5555
+./build/LayingGrassClient 192.168.1.100            # Custom IP, default port: 5555
+./build/LayingGrassClient 192.168.1.100 8080       # Custom IP and port
 ```
 
 #### Windows
 ```bash
-build\Release\LayingGrassServer.exe
-build\Release\LayingGrassClient.exe
+# Server
+build\Release\LayingGrassServer.exe          # Default port: 5555
+build\Release\LayingGrassServer.exe 8080     # Custom port: 8080
+
+# Client
+build\Release\LayingGrassClient.exe                          # Default: 127.0.0.1:5555
+build\Release\LayingGrassClient.exe 192.168.1.100            # Custom IP, default port: 5555
+build\Release\LayingGrassClient.exe 192.168.1.100 8080      # Custom IP and port
 ```
 
 ## 2. Game Classes
@@ -234,7 +246,7 @@ class Client {
 ```
 
 **Key Methods:**
-- `connect(serverIp, port)` - Establishes TCP connection (default: 127.0.0.1:5555)
+- `connect(serverIp, port)` - Establishes TCP connection
 - `sendConnectRequest()` - Joins lobby with name and color
 - `sendCellClick()` - Places tile or uses exchange coupon
 - `sendPlaceStone()`, `sendRobTile()`, `sendDiscardTile()` - Bonus actions

@@ -92,7 +92,7 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     window.draw(lobby);
     
     ss.str("");
-    ss << "Tour: " << gameState.getTurnCount() << " / 9";
+    ss << "Turn: " << gameState.getTurnCount() << " / 9";
     sf::Text turn = Text::createText(ss.str(), 22);
     turn.setPosition(ix + 20.0f, iy + 20.0f + 35);
     turn.setFillColor(sf::Color::White);
@@ -113,7 +113,7 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     }
     
     ss.str("");
-    ss << "Coupons: " << gameState.getExchangeCouponCount();
+    ss << "Exchange tiles: " << gameState.getExchangeCouponCount();
     sf::Text couponsText = Text::createText(ss.str(), 18);
     couponsText.setPosition(ix + 20.0f, iy + 20.0f + 105);
     couponsText.setFillColor(gameState.getExchangeCouponCount() > 0 ? Theme::FOREST_GREEN : sf::Color(180, 180, 180));
@@ -141,7 +141,7 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
         !gameState.canPlaceTile() && !gameState.hasPendingStoneBonus() && !gameState.hasPendingRobberyBonus()) {
         if (!s_discardButton) {
             s_discardButton = std::make_unique<Button>(ix + 20.0f, iy + infoHeight + 20.0f, 210.0f, 50.0f, 
-                                                       "Abandon de tuile\n(si placement impossible)", 16);
+                                                       "Discard tile\n(if placement impossible)", 16);
         }
         s_discardButton->draw(window);
     } else {
@@ -151,9 +151,9 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     if (gameState.isGameOver() && gameState.getWinnerId() < 0) {
         std::string promptText;
         if (gameState.getExchangeCouponCount() > 0) {
-            promptText = "Press C: Place 1x1 tile or remove stone\nPress X: Remove stone\nPress N: Skip coupon";
+            promptText = "Press C: Place 1x1 tile or remove stone\nPress X: Remove stone\nPress N: Skip exchange tile";
         } else {
-            promptText = "Waiting for other players to finish coupons...";
+            promptText = "Waiting for other players to finish exchange tiles...";
         }
         sf::Text prompt = Text::createText(promptText, 16);
         prompt.setPosition(ix + 20.0f, iy + 20.0f + 135);
@@ -232,7 +232,7 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     }
 
     if (!gameState.isGameOver() && turnId == myId && gameState.getExchangeCouponCount() > 0 && hasUpcomingOptions) {
-        sf::Text couponLabel = Text::createText("Coupons disponibles :", 18);
+        sf::Text couponLabel = Text::createText("Available exchange tiles:", 18);
         couponLabel.setPosition(tx + 20.0f, ty + 20.0f + 360.0f);
         couponLabel.setFillColor(s_selectingCoupon ? Theme::FOREST_GREEN : sf::Color::White);
         window.draw(couponLabel);
@@ -371,7 +371,7 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     // aide
     std::string helpText;
     if (s_selectingCoupon) {
-        helpText = "Coupon selection: 1-5 choose | Esc cancel";
+        helpText = "Exchange tile selection: 1-5 choose | Esc cancel";
     } else {
         helpText = "Press Tab to view all tiles";
         if (!gameState.isGameOver() && turnId == myId) {
@@ -386,7 +386,7 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
             }
             if (gameState.getExchangeCouponCount() > 0) {
                 if (hasUpcomingOptions) {
-                    helpText += " | C: Select coupon";
+                    helpText += " | C: Select exchange tile";
                 }
                 helpText += " | X: Remove stone";
             }
@@ -409,15 +409,15 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
         } else if (cellValue == static_cast<int>(CellType::STONE)) {
             // pierre
             if (!gameState.isGameOver() && turnId == myId && gameState.getExchangeCouponCount() > 0) {
-                tooltipText = "Stone tile - Press X to remove with coupon";
+                tooltipText = "Stone tile - Press X to remove with exchange tile";
             } else if (gameState.isGameOver() && gameState.getExchangeCouponCount() > 0) {
-                tooltipText = "Stone tile - Press C or X to remove with coupon";
+                tooltipText = "Stone tile - Press C or X to remove with exchange tile";
             } else {
                 tooltipText = "This is a stone tile";
             }
         } else if (cellValue == static_cast<int>(CellType::BONUS_EXCHANGE)) {
             // bonus échange (non capturé, sinon ce serait une case joueur)
-            tooltipText = "Exchange bonus: Place tiles on 4 directions (N/S/E/W) to capture. Reward: 1 exchange coupon.";
+            tooltipText = "Exchange bonus: Place tiles on 4 directions (N/S/E/W) to capture. Reward: 1 exchange tile.";
         } else if (cellValue == static_cast<int>(CellType::BONUS_STONE)) {
             // bonus pierre
             tooltipText = "Stone bonus: Place tiles on 4 directions (N/S/E/W) to capture. Reward: Place 1 stone immediately.";

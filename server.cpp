@@ -5,6 +5,7 @@
 #include <thread>
 #include <chrono>
 #include <cstring>
+#include <cstdlib>
 #include <vector>
 
 // variable globale pour accéder au serveur dans les callbacks
@@ -217,8 +218,25 @@ void handleTilePreview(Player* player, const void* data, size_t size) {
     lobby->broadcast(PacketType::TILE_PREVIEW, packet, sizeof(TilePreviewPacket));
 }
 
-int main() {
-    Server server(5555);
+int main(int argc, char* argv[]) {
+    int port = 5555;
+    
+    if (argc >= 2) {
+        port = std::atoi(argv[1]);
+        if (port <= 0 || port > 65535) {
+            std::cerr << "Error: Invalid port number. Must be between 1 and 65535." << std::endl;
+            std::cerr << "Usage: " << argv[0] << " [port]" << std::endl;
+            return 1;
+        }
+    }
+    
+    if (argc > 2) {
+        std::cerr << "Usage: " << argv[0] << " [port]" << std::endl;
+        std::cerr << "Default port: 5555" << std::endl;
+        return 1;
+    }
+    
+    Server server(port);
     g_server = &server; // stocke le pointeur global pour le callback
 
     server.getCallbackManager().registerCallback(PacketType::CONNECT_REQUEST, handleConnectRequest);
@@ -230,7 +248,7 @@ int main() {
     server.getCallbackManager().registerCallback(PacketType::DISCARD_TILE, handleDiscardTile);
     server.start();
 
-    std::cout << "Server started on port 5555" << std::endl;
+    std::cout << "Server started on port " << port << std::endl;
 
     while (true) {
         std::this_thread::sleep_for(std::chrono::seconds(1));

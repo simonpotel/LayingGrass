@@ -14,7 +14,7 @@
 #include <iostream>
 
 Game::Game(int lobbyId, Lobby* lobby)
-    : lobbyId(lobbyId), lobby(lobby), currentTurnIndex(0), turnCount(0), winnerId(-1), rng(std::random_device{}()), awaitingFinalCoupons(false), tileQueueIndex(0) {
+    : lobbyId(lobbyId), lobby(lobby), currentTurnIndex(0), turnCount(0), winnerId(-1), rng(std::random_device{}()), awaitingFinalCoupons(false), tileQueueIndex(0), consecutiveSkips(0) {
     // détermine la taille de la grille selon le nombre de joueurs
     // 2-4 joueurs : grille 20x20, 5-9 joueurs : grille 30x30
     int playerCount = lobby->getPlayerCount();
@@ -141,6 +141,7 @@ void Game::handleCellClick(int connection, int row, int col, int rotation, bool 
         }
 
         if (useExchangeCoupon(connection, row, col)) {
+            // useExchangeCoupon a déjà appelé broadcastBoardUpdate()
             finalizeWinnerIfReady();
         }
         return;
@@ -204,29 +205,40 @@ void Game::handleCellClick(int connection, int row, int col, int rotation, bool 
     
     // vérifie les bonus capturés après le placement (4 directions cardinales)
     // un bonus est capturé si les 4 directions cardinales sont occupées par le joueur
+    // IMPORTANT: vérifier TOUS les bonus sur le plateau, pas seulement ceux autour de la tuile
     int size = board.getSize();
+    std::vector<std::pair<int, int>> capturedBonuses;
+    
     for (int r = 0; r < size; ++r) {
         for (int c = 0; c < size; ++c) {
-            if (!board.isBonusCaptured(r, c, colorId)) {
+            if (!board.isBonus(r, c)) {
                 continue;
             }
             
-            // bonus capturé !
-            const Cell& bonusCell = board.getCell(r, c);
-            CellType bonusType = bonusCell.getType();
-            
-            // applique l'effet du bonus
-            if (bonusType == CellType::BONUS_EXCHANGE) {
-                addExchangeCoupon(connection);
-            } else if (bonusType == CellType::BONUS_STONE) {
-                playerPendingStoneBonus[connection] = true;
-            } else if (bonusType == CellType::BONUS_ROBBERY) {
-                playerPendingRobberyBonus[connection] = true;
+            // vérifie si ce bonus est capturé
+            if (board.isBonusCaptured(r, c, colorId)) {
+                capturedBonuses.push_back({r, c});
             }
-            
-            // le bonus devient partie du territoire du joueur
-            board.setCell(r, c, Cell(colorId));
         }
+    }
+    
+    // applique les effets des bonus capturés
+    for (const auto& [r, c] : capturedBonuses) {
+        // IMPORTANT: récupérer le type AVANT de transformer la cellule
+        const Cell& bonusCell = board.getCell(r, c);
+        CellType bonusType = bonusCell.getType();
+        
+        // applique l'effet du bonus AVANT de transformer la cellule
+        if (bonusType == CellType::BONUS_EXCHANGE) {
+            addExchangeCoupon(connection, 1);
+        } else if (bonusType == CellType::BONUS_STONE) {
+            playerPendingStoneBonus[connection] = true;
+        } else if (bonusType == CellType::BONUS_ROBBERY) {
+            playerPendingRobberyBonus[connection] = true;
+        }
+        
+        // transforme la cellule bonus en cellule du joueur APRÈS avoir appliqué l'effet
+        board.setCell(r, c, Cell(colorId));
     }
     
     // placement réussi
@@ -245,6 +257,7 @@ void Game::handleCellClick(int connection, int row, int col, int rotation, bool 
     }
     // si le joueur a un bonus en attente, le tour reste au même joueur jusqu'à ce qu'il utilise son bonus
     
+    // IMPORTANT: toujours mettre à jour après avoir capturé un bonus pour que les clients reçoivent les nouveaux coupons
     broadcastBoardUpdate(); // envoie le paquet de mise à jour de la grille à tous les joueurs du lobby
 }
 
@@ -256,23 +269,17 @@ void Game::nextTurn() {
     // distribue une nouvelle tuile au joueur dont c'est le tour
     int nextPlayer = getCurrentPlayerConnection();
     if (nextPlayer != -1) {
-        // vérifie si le joueur a déjà une tuile (par exemple s'il a été volé)
-        // si c'est son premier tour, on lui donne toujours une tuile
-        // sinon, s'il n'a pas de tuile, c'est qu'il a été volé, donc on passe son tour
         bool hasTile = (playerTiles.find(nextPlayer) != playerTiles.end() && playerTiles[nextPlayer] != -1);
         bool isFirstTurn = isFirstTurnForPlayer(nextPlayer);
         
-        if (isFirstTurn || hasTile) {
-            // premier tour ou a déjà une tuile : on lui donne une tuile normalement
+        if (isFirstTurn) {
+            consecutiveSkips = 0;
             giveTileToPlayer(nextPlayer);
+        } else if (hasTile) {
+            consecutiveSkips = 0;
         } else {
-            // le joueur n'a pas de tuile et ce n'est pas son premier tour : il a été volé
-            // on passe son tour sans lui donner de tuile
-            std::cout << "[GAME] [NEXT_TURN] Player " << nextPlayer << " has no tile (stolen), skipping turn" << std::endl;
-            playerTurnsPlayed[nextPlayer]++; // compte quand même le tour comme joué
-            turnCount++; // incrémente le nombre d'actions
-            // passe au joueur suivant
-            nextTurn(); // récursion pour passer au joueur suivant
+            consecutiveSkips = 0;
+            giveTileToPlayer(nextPlayer, true);
         }
     }
 }
@@ -361,12 +368,16 @@ void Game::ensureUpcomingTiles(size_t count) {
 }
 
 bool Game::useExchangeCoupon(int connection, int row, int col) {
-    if (playerExchangeCoupons[connection] <= 0) {
+    // vérifie que le joueur a des coupons disponibles
+    auto couponIt = playerExchangeCoupons.find(connection);
+    if (couponIt == playerExchangeCoupons.end() || couponIt->second <= 0) {
         return false;
     }
 
+    // Skip coupon usage (row < 0 ou col < 0)
     if (row < 0 || col < 0) {
-        playerExchangeCoupons[connection] = std::max(0, playerExchangeCoupons[connection] - 1);
+        playerExchangeCoupons[connection]--;
+        broadcastBoardUpdate(); // met à jour immédiatement
         return true;
     }
 
@@ -379,6 +390,21 @@ bool Game::useExchangeCoupon(int connection, int row, int col) {
         return false;
     }
 
+    const Cell& cell = board.getCell(row, col);
+    
+    // Retirer une pierre
+    if (cell.isStone()) {
+        board.setCell(row, col, Cell(CellType::EMPTY));
+        playerExchangeCoupons[connection]--;
+        broadcastBoardUpdate(); // met à jour immédiatement
+        return true;
+    }
+    
+    // Placer une tuile 1x1 (seulement si c'est une case vide)
+    if (!cell.isEmpty()) {
+        return false; // ni pierre ni vide
+    }
+    
     Tile tile = Tile::getTile(Tile::fromInt(static_cast<int>(TileId::TILE_0)));
     bool firstTurn = !PlacementRules::playerHasCells(board, colorId);
     if (!PlacementRules::canPlaceTile(board, tile, row, col, colorId, firstTurn)) {
@@ -387,6 +413,7 @@ bool Game::useExchangeCoupon(int connection, int row, int col) {
 
     board.setCell(row, col, Cell(colorId));
     playerExchangeCoupons[connection]--;
+    broadcastBoardUpdate(); // met à jour immédiatement
     return true;
 }
 
@@ -409,6 +436,9 @@ bool Game::isFirstTurnForPlayer(int connection) const {
 void Game::addExchangeCoupon(int connection, int count) {
     if (count <= 0) {
         return;
+    }
+    if (playerExchangeCoupons.find(connection) == playerExchangeCoupons.end()) {
+        playerExchangeCoupons[connection] = 0;
     }
     playerExchangeCoupons[connection] += count;
 }
@@ -565,18 +595,14 @@ bool Game::robTile(int connection, int targetPlayerColorId) {
     }
     
     stolenTile = it->second;
-    std::cout << "[GAME] [ROB_TILE] Stealing tile " << stolenTile << " from player " << targetPlayerColorId << " (connection " << targetConnection << ")" << std::endl;
     
     // vole la tuile : transfère la tuile du joueur cible au joueur actif
     playerTiles[targetConnection] = -1; // retire la tuile du joueur cible
     playerTiles[connection] = stolenTile; // donne la tuile au joueur actif
     
-    std::cout << "[GAME] [ROB_TILE] After transfer - Robber (conn " << connection << ", color " << getPlayerColorId(connection) << ") now has tile " << playerTiles[connection] << std::endl;
-    std::cout << "[GAME] [ROB_TILE] Victim (conn " << targetConnection << ", color " << targetPlayerColorId << ") now has tile " << playerTiles[targetConnection] << std::endl;
     
     // vérification : s'assure que la tuile est bien assignée
     if (playerTiles[connection] != stolenTile) {
-        std::cout << "[GAME] [ROB_TILE] WARNING: Tile mismatch! Forcing assignment..." << std::endl;
         playerTiles[connection] = stolenTile; // force l'assignation si nécessaire
     }
     
@@ -586,12 +612,10 @@ bool Game::robTile(int connection, int targetPlayerColorId) {
     // vérifie que le joueur actif est toujours le même (ne devrait pas changer)
     int verifyConn = getCurrentPlayerConnection();
     if (verifyConn != connection) {
-        std::cout << "[GAME] [ROB_TILE] ERROR: Turn changed! Expected " << connection << " but got " << verifyConn << std::endl;
         // problème : le tour a changé, on ne peut pas voler
         return false;
     }
     
-    std::cout << "[GAME] [ROB_TILE] Broadcasting board update - current player: " << verifyConn << ", tile: " << getCurrentPlayerTileId(verifyConn) << std::endl;
     // met à jour le board pour que le joueur voie sa tuile volée (il est encore le joueur actif)
     broadcastBoardUpdate();
     
@@ -717,12 +741,10 @@ void Game::broadcastBoardUpdate() {
         // vérifie si le joueur a vraiment une tuile dans la map
         auto it = playerTiles.find(currentPlayerConn);
         if (it != playerTiles.end() && it->second != -1) {
-            std::cout << "[GAME] [BROADCAST] WARNING: Tile mismatch detected! Correcting from -1 to " << it->second << " for player " << currentPlayerConn << std::endl;
             packet.currentPlayerTileId = it->second; // corrige la tuile
         }
     }
     
-    std::cout << "[GAME] [BROADCAST] Player: " << currentPlayerConn << " (color " << packet.currentTurnColorId << "), Tile: " << packet.currentPlayerTileId << std::endl;
     for (int i = 0; i < 9; ++i) {
         packet.exchangeCoupons[i] = 0;
         packet.pendingStoneBonus[i] = false;
@@ -732,7 +754,8 @@ void Game::broadcastBoardUpdate() {
     for (int conn : playerConnections) {
         int color = getPlayerColorId(conn);
         if (color >= 0 && color < 9) {
-            packet.exchangeCoupons[color] = getExchangeCouponCount(conn);
+            int couponCount = getExchangeCouponCount(conn);
+            packet.exchangeCoupons[color] = couponCount;
             packet.pendingStoneBonus[color] = hasPendingStoneBonus(conn);
             packet.pendingRobberyBonus[color] = hasPendingRobberyBonus(conn);
             packet.canPlaceTile[color] = canPlayerPlaceTile(conn);

@@ -151,7 +151,7 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
     if (gameState.isGameOver() && gameState.getWinnerId() < 0) {
         std::string promptText;
         if (gameState.getExchangeCouponCount() > 0) {
-            promptText = "Press C to place 1x1 or N to skip coupon";
+            promptText = "Press C: Place 1x1 tile or remove stone\nPress N: Skip coupon";
         } else {
             promptText = "Waiting for other players to finish coupons...";
         }
@@ -342,6 +342,32 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
         }
     }
     
+    if (gameState.isGameOver() && gameState.getWinnerId() < 0 && gameState.getExchangeCouponCount() > 0 && myId >= 0) {
+        if (s_hoverRow >= 0 && s_hoverCol >= 0) {
+            const Board& board = gameState.getBoard();
+            if (board.isValidPosition(s_hoverRow, s_hoverCol)) {
+                int cellValue = board.getCellValue(s_hoverRow, s_hoverCol);
+                if (cellValue == static_cast<int>(CellType::STONE)) {
+                    float cellX = bx + s_hoverCol * 18.0f;
+                    float cellY = by + s_hoverRow * 18.0f;
+                    sf::RectangleShape highlight(sf::Vector2f(18.0f - 2, 18.0f - 2));
+                    highlight.setPosition(cellX + 1, cellY + 1);
+                    highlight.setFillColor(sf::Color(255, 100, 100, 150));
+                    highlight.setOutlineColor(sf::Color(255, 0, 0, 220));
+                    highlight.setOutlineThickness(2);
+                    window.draw(highlight);
+                } else if (cellValue == static_cast<int>(CellType::EMPTY)) {
+                    Tile tile = Tile::getTile(Tile::fromInt(static_cast<int>(TileId::TILE_0)));
+                    if (tile.isValid()) {
+                        bool firstTurn = !PlacementRules::playerHasCells(board, myId);
+                        bool canPlace = PlacementRules::canPlaceTile(board, tile, s_hoverRow, s_hoverCol, myId, firstTurn);
+                        BoardRenderer::drawPreview(window, tile, bx, by, 18.0f, bs, s_hoverRow, s_hoverCol, canPlace, GameState::PLAYERS_COLORS[myId]);
+                    }
+                }
+            }
+        }
+    }
+    
     // aide
     std::string helpText;
     if (s_selectingCoupon) {
@@ -362,7 +388,7 @@ void InGame::draw(sf::RenderWindow& window, GameState& gameState) {
                 helpText += " | C: Select coupon";
             }
         } else if (gameState.isGameOver() && gameState.getExchangeCouponCount() > 0) {
-            helpText += " | C: Place coupon | N: Skip";
+            helpText += " | C: Place 1x1 tile or remove stone | N: Skip";
         }
     }
     sf::Text help = Text::createText(helpText, 16);
@@ -513,8 +539,21 @@ bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Eve
                 if (gameState.getExchangeCouponCount() > 0 && g_client) {
                     if (s_hoverRow >= 0 && s_hoverCol >= 0) {
                         const Board& board = gameState.getBoard();
-                        if (board.isValidPosition(s_hoverRow, s_hoverCol) && board.isEmpty(s_hoverRow, s_hoverCol)) {
-                            g_client->sendCellClick(gameState.getCurrentLobby(), s_hoverRow, s_hoverCol, 0, false, false, true);
+                        if (board.isValidPosition(s_hoverRow, s_hoverCol)) {
+                            int cellValue = board.getCellValue(s_hoverRow, s_hoverCol);
+                            if (cellValue == static_cast<int>(CellType::EMPTY) || cellValue == static_cast<int>(CellType::STONE)) {
+                                if (cellValue == static_cast<int>(CellType::EMPTY)) {
+                                    int myId = gameState.getSelectedColor();
+                                    Tile tile = Tile::getTile(Tile::fromInt(static_cast<int>(TileId::TILE_0)));
+                                    if (tile.isValid()) {
+                                        bool firstTurn = !PlacementRules::playerHasCells(board, myId);
+                                        if (!PlacementRules::canPlaceTile(board, tile, s_hoverRow, s_hoverCol, myId, firstTurn)) {
+                                            return false;
+                                        }
+                                    }
+                                }
+                                g_client->sendCellClick(gameState.getCurrentLobby(), s_hoverRow, s_hoverCol, 0, false, false, true);
+                            }
                         }
                     }
                 }
@@ -571,6 +610,32 @@ bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Eve
     }
     
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+        if (gameState.isGameOver() && gameState.getWinnerId() < 0 && gameState.getExchangeCouponCount() > 0) {
+            int row, col;
+            if (BoardRenderer::handleClick(static_cast<float>(event.mouseButton.x), static_cast<float>(event.mouseButton.y), bx, by, 18.0f, bs, row, col)) {
+                const Board& board = gameState.getBoard();
+                if (board.isValidPosition(row, col)) {
+                    int cellValue = board.getCellValue(row, col);
+                    if (cellValue == static_cast<int>(CellType::EMPTY) || cellValue == static_cast<int>(CellType::STONE)) {
+                        int myId = gameState.getSelectedColor();
+                        if (cellValue == static_cast<int>(CellType::EMPTY)) {
+                            Tile tile = Tile::getTile(Tile::fromInt(static_cast<int>(TileId::TILE_0)));
+                            if (tile.isValid()) {
+                                bool firstTurn = !PlacementRules::playerHasCells(board, myId);
+                                if (!PlacementRules::canPlaceTile(board, tile, row, col, myId, firstTurn)) {
+                                    return false;
+                                }
+                            }
+                        }
+                        if (g_client) {
+                            g_client->sendCellClick(gameState.getCurrentLobby(), row, col, 0, false, false, true);
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        
         if (gameState.isGameOver()) return false;
         
         int turnId = gameState.getCurrentTurnColorId();

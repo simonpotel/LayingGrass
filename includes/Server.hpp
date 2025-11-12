@@ -20,6 +20,7 @@ public:
     void stop();
 
     LobbyManager& getLobbyManager() { return lobbyManager; } // retourne le gestionnaire de lobbies
+    std::vector<std::unique_ptr<Player>>& getPlayers() { return players; } // retourne la liste des joueurs
     void clearLobbyAndRemovePlayers(int lobbyId);
 
 private:

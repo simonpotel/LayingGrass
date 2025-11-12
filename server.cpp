@@ -70,6 +70,12 @@ void handleConnectRequest(Player* player, const void* data, size_t size) {
         std::cout << "Player " << player->playerName << " connected to lobby " << packet->lobbyId << std::endl;
 
         Packet::sendPacket(player->connection, PacketType::CONNECT_RESPONSE, &response, sizeof(response));
+        
+        // broadcast la liste des lobbies mise à jour à tous les joueurs
+        LobbyListPacket lobbyListPacket = g_server->getLobbyManager().getLobbyListPacket();
+        for (auto& p : g_server->getPlayers()) {
+            Packet::sendPacket(p->connection, PacketType::LOBBY_LIST, &lobbyListPacket, sizeof(LobbyListPacket));
+        }
     } else {
         response.accepted = false;
         strncpy(response.reason, "Error adding to lobby", sizeof(response.reason) - 1);

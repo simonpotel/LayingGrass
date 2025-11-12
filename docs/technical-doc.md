@@ -40,10 +40,10 @@ sudo apt-get install -y libpthread-stubs0-dev libgl1-mesa-dev libx11-dev libxran
 ```
 
 #### macOS
-No additional dependencies required.
+SFML 
 
 #### Windows
-No additional dependencies required.
+SFML
 
 ### Build Commands
 

@@ -5,7 +5,7 @@
 #include "Render/utils/Element.hpp"
 #include <sstream>
 
-static const int MAX_PLAYERS = 2; // nombre maximum de joueurs par lobby
+static const int MAX_PLAYERS = 9; // nombre maximum de joueurs par lobby
 
 void SelectingLobby::draw(sf::RenderWindow& window, GameState& gameState) {
     sf::Vector2u ws = window.getSize();

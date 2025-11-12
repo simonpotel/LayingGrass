@@ -112,8 +112,36 @@ void Server::handleClient(int clientSocket) {
         // appelle le callback correspondant au type de paquet via le callback manager
         auto* callback = callbackManager.getCallback(header.type);
         if (callback) {
-            std::cout << "[PACKET] Type: " << static_cast<int>(header.type) << " Size: " << header.size << std::endl;
+            // filtre le type 8 (TILE_PREVIEW) pour éviter le spam dans les logs
+            if (static_cast<int>(header.type) != 8) {
+                std::cout << "[SERVER] [PACKET] Type: " << static_cast<int>(header.type);
+                switch (header.type) {
+                    case PacketType::CONNECT_REQUEST: std::cout << " (CONNECT_REQUEST)"; break;
+                    case PacketType::CONNECT_RESPONSE: std::cout << " (CONNECT_RESPONSE)"; break;
+                    case PacketType::LOBBY_LIST: std::cout << " (LOBBY_LIST)"; break;
+                    case PacketType::GAME_START: std::cout << " (GAME_START)"; break;
+                    case PacketType::GAME_END: std::cout << " (GAME_END)"; break;
+                    case PacketType::BOARD_UPDATE: std::cout << " (BOARD_UPDATE)"; break;
+                    case PacketType::CELL_CLICK: std::cout << " (CELL_CLICK)"; break;
+                    case PacketType::START_GAME_REQUEST: std::cout << " (START_GAME_REQUEST)"; break;
+                    case PacketType::TILE_PREVIEW: std::cout << " (TILE_PREVIEW)"; break;
+                    case PacketType::PLACE_STONE: std::cout << " (PLACE_STONE)"; break;
+                    case PacketType::ROB_TILE: std::cout << " (ROB_TILE)"; break;
+                    case PacketType::DISCARD_TILE: std::cout << " (DISCARD_TILE)"; break;
+                }
+                std::cout << " Size: " << header.size;
+                if (player) {
+                    std::cout << " From: " << player->connection << " (" << player->playerName << ")";
+                }
+                std::cout << std::endl;
+            }
             (*callback)(player, data, header.size);
+        } else {
+            std::cout << "[SERVER] [PACKET] Type: " << static_cast<int>(header.type) << " Size: " << header.size;
+            if (player) {
+                std::cout << " From: " << player->connection << " (" << player->playerName << ")";
+            }
+            std::cout << " - NO CALLBACK!" << std::endl;
         }
 
         if (data) {
@@ -205,6 +233,10 @@ void Server::gameUpdateLoop() {
                 game->update(); // met à jour le jeu
                 
                 if (game->isGameOver()) { // si la partie est terminée
+                    if (game->hasRemainingCoupons()) {
+                        continue; // attendre que tous les coupons soient utilisés/écartés
+                    }
+
                     int winnerId = game->getWinner(); // récupère le winnerId avant de nettoyer
                     int boardSize = game->getBoard()->getSize(); // récupère la taille du board
                     
@@ -231,6 +263,14 @@ void Server::gameUpdateLoop() {
                     
                     for (int i = 0; i < 900; ++i) {
                         emptyBoardPacket.grid[i] = -1; // initialise toutes les cellules à -1 (vide)
+                    }
+                    for (int i = 0; i < 9; ++i) {
+                        emptyBoardPacket.exchangeCoupons[i] = 0;
+                        emptyBoardPacket.pendingStoneBonus[i] = false;
+                        emptyBoardPacket.pendingRobberyBonus[i] = false;
+                    }
+                    for (int i = 0; i < 5; ++i) {
+                        emptyBoardPacket.upcomingTiles[i] = -1;
                     }
                     
                     lobby->broadcast(PacketType::BOARD_UPDATE, &emptyBoardPacket, sizeof(BoardUpdatePacket)); // envoie le board vide à tous les joueurs du lobby

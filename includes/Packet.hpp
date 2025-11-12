@@ -12,7 +12,12 @@ enum class PacketType {
     GAME_START, // début de la partie
     GAME_END, // fin de la partie
     BOARD_UPDATE, // mise à jour de la grille du jeu
-    CELL_CLICK // clic sur une cellule de la grille
+    CELL_CLICK, // clic sur une cellule de la grille
+    START_GAME_REQUEST, // demande de lancer la partie
+    TILE_PREVIEW, // prévisualisation de placement de tuile
+    PLACE_STONE, // placer une pierre avec le bonus stone
+    ROB_TILE, // voler une tuile avec le bonus robbery
+    DISCARD_TILE // abandonner une tuile (si placement impossible)
 };
 
 #include "PacketCallback.hpp"
@@ -61,12 +66,6 @@ struct GameEndPacket {
     char winnerName[256]; // nom du joueur gagnant
 };
 
-struct CellClickPacket {
-    int lobbyId; // identifiant du lobby
-    int row; // ligne de la cellule cliquée
-    int col; // colonne de la cellule cliquée
-};
-
 struct BoardUpdatePacket {
     int lobbyId; // identifiant du lobby
     int size; // taille de la grille (20 ou 30)
@@ -76,6 +75,51 @@ struct BoardUpdatePacket {
     bool gameOver; // true si la partie est terminée
     int winnerId; // identifiant de la couleur du gagnant (-1 si pas de gagnant)
     int currentPlayerTileId; // ID de la tuile du joueur dont c'est le tour (-1 si aucune tuile)
+    int exchangeCoupons[9]; // coupons d'échange par couleur
+    bool pendingStoneBonus[9]; // bonus de pierre en attente par couleur
+    bool pendingRobberyBonus[9]; // bonus de vol en attente par couleur
+    int upcomingTiles[5]; // prochaines tuiles disponibles dans la file
+    bool canPlaceTile[9]; // true si le joueur peut placer sa tuile quelque part
+};
+
+struct CellClickPacket {
+    int lobbyId; // identifiant du lobby
+    int row; // ligne de la cellule cliquée
+    int col; // colonne de la cellule cliquée
+    int rotation; // rotation de la tuile (0-3 pour 0°, 90°, 180°, 270°)
+    bool flippedH; // flip horizontal de la tuile
+    bool flippedV; // flip vertical de la tuile
+    bool useCoupon; // true si on souhaite utiliser un coupon
+    int couponChoice; // index de la tuile choisie avec le coupon (0-4) ou -1
+};
+
+struct StartGameRequestPacket {
+    int lobbyId; // identifiant du lobby
+};
+
+struct TilePreviewPacket {
+    int lobbyId; // identifiant du lobby
+    int row; // ligne de prévisualisation (-1 si pas de prévisualisation)
+    int col; // colonne de prévisualisation (-1 si pas de prévisualisation)
+    int rotation; // rotation de la tuile (0-3)
+    bool flippedH; // flip horizontal
+    bool flippedV; // flip vertical
+    int colorId; // couleur du joueur qui prévisualise
+};
+
+struct PlaceStonePacket {
+    int lobbyId; // identifiant du lobby
+    int row; // ligne où placer la pierre
+    int col; // colonne où placer la pierre
+};
+
+struct RobTilePacket {
+    int lobbyId; // identifiant du lobby
+    int targetPlayerColorId; // couleur du joueur dont on vole une tuile
+};
+
+struct DiscardTilePacket {
+    int lobbyId; // identifiant du lobby
 };
 
 namespace Packet {

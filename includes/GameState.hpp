@@ -5,6 +5,8 @@
 #include "Game/Board.hpp"
 #include <vector>
 #include <string>
+#include <mutex>
+#include <array>
 
 namespace sf {
     class Color;
@@ -36,7 +38,10 @@ public:
 
     // gestion des lobbies
     void updateLobbies(const LobbyListPacket& packet);
-    const std::vector<LobbyInfo>& getLobbies() const { return lobbies; }
+    std::vector<LobbyInfo> getLobbies() const;
+    
+    // utilitaire pour obtenir le nom d'un joueur par sa couleur
+    std::string getPlayerNameByColorId(int lobbyId, int colorId) const;
 
     // sélection du lobby
     void setSelectedLobby(int lobbyId) { selectedLobbyId = lobbyId; }
@@ -57,6 +62,10 @@ public:
     // flag pour savoir si la requête de connexion a déjà été envoyée
     void setRequestSent(bool sent) { requestSent = sent; }
     bool isRequestSent() const { return requestSent; }
+    
+    // flag pour savoir si on a demandé de lancer la partie
+    void setStartGameRequested(bool requested) { startGameRequested = requested; }
+    bool isStartGameRequested() const { return startGameRequested; }
 
     // gestion du board
     void updateBoard(const BoardUpdatePacket& packet);
@@ -68,6 +77,30 @@ public:
     
     // gestion de la tuile actuelle
     int getCurrentPlayerTileId() const { return currentPlayerTileId; }
+    int getExchangeCouponCount() const { return exchangeCouponCount; }
+    void setExchangeCouponCount(int count) { exchangeCouponCount = count; }
+    const std::array<int, 5>& getUpcomingTiles() const { return upcomingTiles; }
+    bool hasPendingStoneBonus() const { return pendingStoneBonus; }
+    bool hasPendingRobberyBonus() const { return pendingRobberyBonus; }
+    bool canPlaceTile() const { return canPlaceTileFlag; }
+    
+    // gestion de la prévisualisation
+    void updateTilePreview(const TilePreviewPacket& packet);
+    int getPreviewRow() const { return previewRow; }
+    int getPreviewCol() const { return previewCol; }
+    int getPreviewRotation() const { return previewRotation; }
+    bool getPreviewFlippedH() const { return previewFlippedH; }
+    bool getPreviewFlippedV() const { return previewFlippedV; }
+    int getPreviewColorId() const { return previewColorId; }
+    
+    // gestion des transformations de tuile
+    int getTileRotation() const { return tileRotation; }
+    void setTileRotation(int rotation) { tileRotation = rotation % 4; }
+    bool getTileFlippedH() const { return tileFlippedH; }
+    void setTileFlippedH(bool flipped) { tileFlippedH = flipped; }
+    bool getTileFlippedV() const { return tileFlippedV; }
+    void setTileFlippedV(bool flipped) { tileFlippedV = flipped; }
+    void resetTileTransform();
     
     void resetGameData();
     
@@ -82,11 +115,13 @@ public:
 private:
     ClientState currentState; // état actuel du client
     std::vector<LobbyInfo> lobbies; // liste des lobbies disponibles
+    mutable std::mutex lobbiesMutex; // mutex pour protéger l'accès aux lobbies
     int selectedLobbyId; // identifiant du lobby sélectionné
     int currentLobbyId; // identifiant du lobby actuel (quand connecté)
     std::string username; // nom d'utilisateur saisi
     int selectedColorId; // identifiant de la couleur sélectionnée (-1 si aucune)
     bool requestSent; // true si la requête de connexion a été envoyée
+    bool startGameRequested; // true si on a demandé de lancer la partie
     
     Board board; // grille du jeu
     int currentTurnColorId; // couleur du joueur dont c'est le tour
@@ -94,9 +129,25 @@ private:
     bool gameOver; // true si la partie est terminée
     int winnerId; // identifiant de la couleur du gagnant
     int currentPlayerTileId; // ID de la tuile du joueur actif (-1 si aucune)
+    int tileRotation; // rotation de la tuile (0-3 pour 0°, 90°, 180°, 270°)
+    bool tileFlippedH; // flip horizontal de la tuile
+    bool tileFlippedV; // flip vertical de la tuile
     int gameEndWinnerId; // identifiant de la couleur du gagnant stocké pour l'affichage GameEnd
     int gameEndLobbyId; // identifiant du lobby stocké pour l'affichage GameEnd
     std::string gameEndWinnerName; // nom du joueur gagnant stocké pour l'affichage GameEnd
+    int exchangeCouponCount; // nombre de coupons d'échange du joueur
+    bool pendingStoneBonus; // true si le joueur doit placer une pierre immédiatement
+    bool pendingRobberyBonus; // true si le joueur doit voler une tuile immédiatement
+    std::array<int, 5> upcomingTiles; // prochaines tuiles disponibles pour l'échange
+    bool canPlaceTileFlag; // true si le joueur peut placer sa tuile quelque part
+    
+    // prévisualisation de placement
+    int previewRow; // ligne de prévisualisation (-1 si pas de prévisualisation)
+    int previewCol; // colonne de prévisualisation (-1 si pas de prévisualisation)
+    int previewRotation; // rotation de la prévisualisation
+    bool previewFlippedH; // flip horizontal de la prévisualisation
+    bool previewFlippedV; // flip vertical de la prévisualisation
+    int previewColorId; // couleur du joueur qui prévisualise (-1 si aucun)
 };
 
 #endif

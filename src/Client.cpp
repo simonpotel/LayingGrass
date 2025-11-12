@@ -65,14 +65,68 @@ bool Client::sendConnectRequest(const char* playerName, int lobbyId, int colorId
     return Packet::sendPacket(socketFd, PacketType::CONNECT_REQUEST, &packet, sizeof(ConnectRequestPacket)); // envoie la demande de connexion au serveur
 }
 
-bool Client::sendCellClick(int lobbyId, int row, int col) {
+bool Client::sendCellClick(int lobbyId, int row, int col, int rotation, bool flippedH, bool flippedV, bool useCoupon, int couponChoice) {
     CellClickPacket packet; // structure pour le clic sur une cellule
     memset(&packet, 0, sizeof(packet)); // initialise la structure à 0
     packet.lobbyId = lobbyId; // définit l'identifiant du lobby
     packet.row = row; // définit la ligne
     packet.col = col; // définit la colonne
+    packet.rotation = rotation; // définit la rotation
+    packet.flippedH = flippedH; // définit le flip horizontal
+    packet.flippedV = flippedV; // définit le flip vertical
+    packet.useCoupon = useCoupon;
+    packet.couponChoice = couponChoice;
 
     return Packet::sendPacket(socketFd, PacketType::CELL_CLICK, &packet, sizeof(CellClickPacket)); // envoie le clic au serveur
+}
+
+bool Client::sendStartGameRequest(int lobbyId) {
+    StartGameRequestPacket packet; // structure pour la demande de lancer la partie
+    memset(&packet, 0, sizeof(packet)); // initialise la structure à 0
+    packet.lobbyId = lobbyId; // définit l'identifiant du lobby
+
+    return Packet::sendPacket(socketFd, PacketType::START_GAME_REQUEST, &packet, sizeof(StartGameRequestPacket)); // envoie la demande au serveur
+}
+
+bool Client::sendTilePreview(int lobbyId, int row, int col, int rotation, bool flippedH, bool flippedV, int colorId) {
+    TilePreviewPacket packet; // structure pour la prévisualisation de placement
+    memset(&packet, 0, sizeof(packet)); // initialise la structure à 0
+    packet.lobbyId = lobbyId; // définit l'identifiant du lobby
+    packet.row = row; // définit la ligne
+    packet.col = col; // définit la colonne
+    packet.rotation = rotation; // définit la rotation
+    packet.flippedH = flippedH; // définit le flip horizontal
+    packet.flippedV = flippedV; // définit le flip vertical
+    packet.colorId = colorId; // définit la couleur du joueur
+
+    return Packet::sendPacket(socketFd, PacketType::TILE_PREVIEW, &packet, sizeof(TilePreviewPacket)); // envoie la prévisualisation au serveur
+}
+
+bool Client::sendPlaceStone(int lobbyId, int row, int col) {
+    PlaceStonePacket packet; // structure pour placer une pierre
+    memset(&packet, 0, sizeof(packet)); // initialise la structure à 0
+    packet.lobbyId = lobbyId; // définit l'identifiant du lobby
+    packet.row = row; // définit la ligne
+    packet.col = col; // définit la colonne
+
+    return Packet::sendPacket(socketFd, PacketType::PLACE_STONE, &packet, sizeof(PlaceStonePacket)); // envoie la demande au serveur
+}
+
+bool Client::sendRobTile(int lobbyId, int targetPlayerColorId) {
+    RobTilePacket packet; // structure pour voler une tuile
+    memset(&packet, 0, sizeof(packet)); // initialise la structure à 0
+    packet.lobbyId = lobbyId; // définit l'identifiant du lobby
+    packet.targetPlayerColorId = targetPlayerColorId; // définit la couleur du joueur cible
+
+    return Packet::sendPacket(socketFd, PacketType::ROB_TILE, &packet, sizeof(RobTilePacket)); // envoie la demande au serveur
+}
+
+bool Client::sendDiscardTile(int lobbyId) {
+    DiscardTilePacket packet; // structure pour abandonner une tuile
+    memset(&packet, 0, sizeof(packet)); // initialise la structure à 0
+    packet.lobbyId = lobbyId; // définit l'identifiant du lobby
+
+    return Packet::sendPacket(socketFd, PacketType::DISCARD_TILE, &packet, sizeof(DiscardTilePacket)); // envoie la demande au serveur
 }
 
 void Client::startReceiving() {
@@ -100,8 +154,28 @@ void Client::receiveLoop() {
         // appelle le callback correspondant au type de paquet via le callback manager
         auto* callback = callbackManager.getCallback(header.type);
         if (callback) {
-            std::cout << "[PACKET] Type: " << static_cast<int>(header.type) << " Size: " << header.size << std::endl;
+            // filtre le type 8 (TILE_PREVIEW) pour éviter le spam dans les logs
+            if (static_cast<int>(header.type) != 8) {
+                std::cout << "[CLIENT] [PACKET] Type: " << static_cast<int>(header.type);
+                switch (header.type) {
+                    case PacketType::CONNECT_REQUEST: std::cout << " (CONNECT_REQUEST)"; break;
+                    case PacketType::CONNECT_RESPONSE: std::cout << " (CONNECT_RESPONSE)"; break;
+                    case PacketType::LOBBY_LIST: std::cout << " (LOBBY_LIST)"; break;
+                    case PacketType::GAME_START: std::cout << " (GAME_START)"; break;
+                    case PacketType::GAME_END: std::cout << " (GAME_END)"; break;
+                    case PacketType::BOARD_UPDATE: std::cout << " (BOARD_UPDATE)"; break;
+                    case PacketType::CELL_CLICK: std::cout << " (CELL_CLICK)"; break;
+                    case PacketType::START_GAME_REQUEST: std::cout << " (START_GAME_REQUEST)"; break;
+                    case PacketType::TILE_PREVIEW: std::cout << " (TILE_PREVIEW)"; break;
+                    case PacketType::PLACE_STONE: std::cout << " (PLACE_STONE)"; break;
+                    case PacketType::ROB_TILE: std::cout << " (ROB_TILE)"; break;
+                    case PacketType::DISCARD_TILE: std::cout << " (DISCARD_TILE)"; break;
+                }
+                std::cout << " Size: " << header.size << std::endl;
+            }
             (*callback)(data, header.size);
+        } else {
+            std::cout << "[CLIENT] [PACKET] Type: " << static_cast<int>(header.type) << " Size: " << header.size << " - NO CALLBACK!" << std::endl;
         }
         if (data) {
             delete[] (char*)data; // on libère la mémoire allouée pour le paquet

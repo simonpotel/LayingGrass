@@ -464,11 +464,30 @@ bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Eve
             s_pendingCol = -1;
             return false;
         } else if (event.type == sf::Event::KeyPressed && 
-                   (event.key.code == sf::Keyboard::Enter || event.key.code == sf::Keyboard::Escape)) {
+                   (event.key.code == sf::Keyboard::Enter || event.key.code == sf::Keyboard::Return || 
+                    event.key.code == sf::Keyboard::Escape)) {
             // la popup a été fermée (annulée)
             s_pendingRow = -1;
             s_pendingCol = -1;
             return false;
+        }
+    }
+    
+    // gère la sélection de tuile d'échange via TextEntered (compatible Mac et PC)
+    if (event.type == sf::Event::TextEntered && !gameState.isGameOver()) {
+        int turnId = gameState.getCurrentTurnColorId();
+        int myId = gameState.getSelectedColor();
+        if (turnId == myId && s_selectingCoupon) {
+            char c = static_cast<char>(event.text.unicode);
+            if (c >= '1' && c <= '5') {
+                int choice = c - '1'; // convertit '1'->0, '2'->1, etc.
+                const auto& upcoming = gameState.getUpcomingTiles();
+                if (choice < 5 && upcoming[choice] >= 0 && g_client) {
+                    g_client->sendCellClick(gameState.getCurrentLobby(), -1, -1, 0, false, false, true, choice);
+                    s_selectingCoupon = false;
+                }
+                return false;
+            }
         }
     }
     
@@ -483,25 +502,9 @@ bool InGame::handleInput(sf::RenderWindow& window, GameState& gameState, sf::Eve
             int turnId = gameState.getCurrentTurnColorId();
             int myId = gameState.getSelectedColor();
             if (turnId == myId) {
-                auto keyToChoice = [](sf::Keyboard::Key key) -> int {
-                    if (key >= sf::Keyboard::Num1 && key <= sf::Keyboard::Num5) {
-                        return static_cast<int>(key - sf::Keyboard::Num1);
-                    }
-                    if (key >= sf::Keyboard::Numpad1 && key <= sf::Keyboard::Numpad5) {
-                        return static_cast<int>(key - sf::Keyboard::Numpad1);
-                    }
-                    return -1;
-                };
-
                 if (s_selectingCoupon) {
-                    int choice = keyToChoice(event.key.code);
-                    if (choice >= 0) {
-                        const auto& upcoming = gameState.getUpcomingTiles();
-                        if (choice < 5 && upcoming[choice] >= 0 && g_client) {
-                            g_client->sendCellClick(gameState.getCurrentLobby(), -1, -1, 0, false, false, true, choice);
-                            s_selectingCoupon = false;
-                        }
-                    } else if (event.key.code == sf::Keyboard::Escape || event.key.code == sf::Keyboard::C) {
+                    // annulation de la sélection de coupon
+                    if (event.key.code == sf::Keyboard::Escape || event.key.code == sf::Keyboard::C) {
                         s_selectingCoupon = false;
                     }
                     return false;

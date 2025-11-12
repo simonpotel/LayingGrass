@@ -149,7 +149,8 @@ bool EnteringUsername::handleInput(sf::RenderWindow& window, GameState& gameStat
         }
     }
 
-    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Return) {
+    if (event.type == sf::Event::KeyPressed && 
+        (event.key.code == sf::Keyboard::Return || event.key.code == sf::Keyboard::Enter)) {
         if (!gameState.getUsername().empty() && gameState.getSelectedColor() != -1) {
             gameState.setState(ClientState::WAITING_FOR_RESPONSE);
         }
